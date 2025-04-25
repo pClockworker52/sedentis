@@ -50,6 +50,10 @@ class TemplateForecaster(ForecastBot):
                     logger.info(f"Research response type: {type(research)}")
                     logger.info(f"Research completed, length: {len(str(research))}")
                     
+                    # Add sleep timer here to avoid rate limits
+                    logger.info("Sleeping for 61 seconds to avoid rate limiting...")
+                    await asyncio.sleep(61)
+                    
                     # Make sure research output includes necessary section headers
                     if isinstance(research, str) and "## Forecast" not in research:
                         research = self._format_research_with_sections(research)
@@ -265,7 +269,9 @@ This section contains forecast information that will be processed in the next st
                 """
             )
             logger.info(f"About to call LLM with prompt length: {len(prompt)}")
-            
+            # Add sleep timer here before LLM call
+            logger.info("Sleeping for 61 seconds to avoid rate limiting...")
+            await asyncio.sleep(61)
             # Check if self.get_llm is working as expected
             llm = self.get_llm("default", "llm")
             logger.info(f"Retrieved LLM: {type(llm).__name__}")

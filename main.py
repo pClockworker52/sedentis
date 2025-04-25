@@ -32,30 +32,6 @@ class TemplateForecaster(ForecastBot):
     Main template bot changes since Q1
     - Support for new units parameter was added
     - You now set your llms when you initialize the bot (making it easier to switch between and benchmark different models)
-
-    The main entry point of this bot is `forecast_on_tournament` in the parent class.
-    See the script at the bottom of the file for more details on how to run the bot.
-    Ignoring the finer details, the general flow is:
-    - Load questions from Metaculus
-    - For each question
-        - Execute run_research a number of times equal to research_reports_per_question
-        - Execute respective run_forecast function `predictions_per_research_report * research_reports_per_question` times
-        - Aggregate the predictions
-        - Submit prediction (if publish_reports_to_metaculus is True)
-    - Return a list of ForecastReport objects
-
-    Only the research and forecast functions need to be implemented in ForecastBot subclasses.
-
-    If you end up having trouble with rate limits and want to try a more sophisticated rate limiter try:
-    ```
-    from forecasting_tools.ai_models.resource_managers.refreshing_bucket_rate_limiter import RefreshingBucketRateLimiter
-    rate_limiter = RefreshingBucketRateLimiter(
-        capacity=2,
-        refresh_rate=1,
-    ) # Allows 1 request per second on average with a burst of 2 requests initially. Set this as a class variable
-    await self.rate_limiter.wait_till_able_to_acquire_resources(1) # 1 because it's consuming 1 request (use more if you are adding a token limit)
-    ```
-    Additionally OpenRouter has large rate limits immediately on account creation
     """
 
     _max_concurrent_questions = 2  # Set this to whatever works for your search-provider/ai-model rate limits
@@ -72,7 +48,11 @@ class TemplateForecaster(ForecastBot):
                     )
                     logger.info(f"Research response type: {type(research)}")
                     logger.info(f"Research completed, length: {len(str(research))}")
-                    # Log the complete research content for debugging
+                    
+                    # Make sure research output includes necessary section headers
+                    if isinstance(research, str) and "## Forecast" not in research:
+                        research = self._format_research_with_sections(research)
+                        
                     logger.debug(f"FULL RESEARCH: {research}")
                 else:
                     logger.warning(
@@ -88,6 +68,23 @@ class TemplateForecaster(ForecastBot):
                 logger.error(f"ERROR in run_research: {type(e).__name__}: {str(e)}")
                 logger.error("Stack trace:", exc_info=True)
                 raise
+    
+    def _format_research_with_sections(self, research: str) -> str:
+        """
+        Ensure research output has the required section headers that forecast_report.py expects.
+        """
+        # If research already has the forecast section, return as is
+        if "## Forecast" in research:
+            return research
+            
+        # Otherwise, add the section headers that forecast_report.py expects
+        formatted_research = f"""## Research
+{research}
+
+## Forecast
+This section contains forecast information that will be processed in the next step.
+"""
+        return formatted_research
 
     async def _call_perplexity(
         self, question: str, use_open_router: bool = False
@@ -133,6 +130,8 @@ class TemplateForecaster(ForecastBot):
                 5. **Growth/Expansion Dynamics:** Are there inherent pressures for growth or expansion?
                 6. **Inertial Forces (A↓):** What creates path dependency or resists change? Assess system rigidity.
                 7. **Potential Shocks (S):** What stressors or shocks might impact the system?
+                
+                Your research must include a section titled "## Forecast" that briefly summarizes implications for forecasting.
                 
                 Keep your analysis concise but comprehensive. Explicitly connect your analysis to Sedentis concepts using the formal parameters (R, X, M, Act, Per, A↓, S) where appropriate.
                 """
@@ -234,6 +233,10 @@ class TemplateForecaster(ForecastBot):
                    - Catastrophic failures of complexity (X)
                    - Uncontrollable resistance from human agents (P)
                 
+                Your answer must be divided into two sections:
+                1. First section titled "## Analysis" containing your detailed reasoning
+                2. Second section titled "## Forecast" containing your final probability assessment
+                
                 The last thing you write is your final probability as: "Probability: ZZ%", 0-100
                 """
             )
@@ -247,6 +250,11 @@ class TemplateForecaster(ForecastBot):
             try:
                 reasoning = await llm.invoke(prompt)
                 logger.info(f"Successfully received reasoning of length {len(reasoning)}")
+                
+                # Ensure forecast section exists
+                if "## Forecast" not in reasoning:
+                    reasoning = self._format_forecast_with_sections(reasoning)
+                
             except Exception as llm_error:
                 logger.error(f"Error during LLM invoke: {type(llm_error).__name__}: {str(llm_error)}")
                 logger.error(f"Error details: {llm_error.__dict__ if hasattr(llm_error, '__dict__') else 'No __dict__'}")
@@ -270,6 +278,47 @@ class TemplateForecaster(ForecastBot):
                 logger.error("This appears to be the 'request attribute' error. Root cause may be a malformed response or API issue.")
             logger.error("Stack trace:", exc_info=True)
             raise
+    
+    def _format_forecast_with_sections(self, reasoning: str) -> str:
+        """
+        Ensure forecast output has the required section headers that forecast_report.py expects.
+        """
+        # Check if there's already some structure we can work with
+        if "## Analysis" in reasoning or "## Reasoning" in reasoning:
+            # Extract the last paragraph which should contain the probability
+            paragraphs = reasoning.split("\n\n")
+            analysis = "\n\n".join(paragraphs[:-1])
+            forecast = paragraphs[-1]
+            
+            formatted_reasoning = f"""## Analysis
+{analysis}
+
+## Forecast
+{forecast}
+"""
+        else:
+            # Split at the probability statement
+            if "Probability:" in reasoning:
+                parts = reasoning.split("Probability:", 1)
+                analysis = parts[0].strip()
+                forecast = "Probability:" + parts[1].strip()
+                
+                formatted_reasoning = f"""## Analysis
+{analysis}
+
+## Forecast
+{forecast}
+"""
+            else:
+                # If we can't find a good split point, just add the section headers
+                formatted_reasoning = f"""## Analysis
+{reasoning.strip()}
+
+## Forecast
+The forecast is derived from the analysis above.
+"""
+        
+        return formatted_reasoning
 
     async def _run_forecast_on_multiple_choice(
         self, question: MultipleChoiceQuestion, research: str
@@ -328,6 +377,10 @@ class TemplateForecaster(ForecastBot):
                
             4. **Justify From Sedentis Perspective:** Explain your probability distribution in terms of resource needs, complexity management, control imperatives, and resilience to shocks.
             
+            Your answer must be divided into two sections:
+            1. First section titled "## Analysis" containing your detailed reasoning
+            2. Second section titled "## Forecast" containing your final probability assessment
+            
             The last thing you write is your final probabilities for the N options in this order {question.options} as:
             Option_A: Probability_A
             Option_B: Probability_B
@@ -336,6 +389,11 @@ class TemplateForecaster(ForecastBot):
             """
         )
         reasoning = await self.get_llm("default", "llm").invoke(prompt)
+        
+        # Ensure forecast section exists
+        if "## Forecast" not in reasoning:
+            reasoning = self._format_forecast_with_sections(reasoning)
+            
         prediction: PredictedOptionList = (
             PredictionExtractor.extract_option_list_with_percentage_afterwards(
                 reasoning, question.options
@@ -423,7 +481,11 @@ class TemplateForecaster(ForecastBot):
                - Its capacity to direct outcomes through Action (Act)
                - Potential resistances or external forces
                - The inherent uncertainties in complex system prediction
-
+               
+            Your answer must be divided into two sections:
+            1. First section titled "## Analysis" containing your detailed reasoning
+            2. Second section titled "## Forecast" containing your final percentile distribution
+            
             The last thing you write is your final answer as:
             "
             Percentile 10: XX
@@ -436,6 +498,11 @@ class TemplateForecaster(ForecastBot):
             """
         )
         reasoning = await self.get_llm("default", "llm").invoke(prompt)
+        
+        # Ensure forecast section exists
+        if "## Forecast" not in reasoning:
+            reasoning = self._format_forecast_with_sections(reasoning)
+            
         prediction: NumericDistribution = (
             PredictionExtractor.extract_numeric_distribution_from_list_of_percentile_number_and_probability(
                 reasoning, question
@@ -556,4 +623,15 @@ if __name__ == "__main__":
         forecast_reports = asyncio.run(
             template_bot.forecast_questions(questions, return_exceptions=True)
         )
-    TemplateForecaster.log_report_summary(forecast_reports)  # type: ignore
+    
+    # Custom handling for log_report_summary to prevent errors
+    try:
+        TemplateForecaster.log_report_summary(forecast_reports)  # type: ignore
+    except ValueError as e:
+        logger.error(f"Error in log_report_summary: {e}")
+        # Print summary manually
+        logger.info("Forecast Report Summary:")
+        for i, report in enumerate(forecast_reports):
+            logger.info(f"Report {i+1}: {report.question_url}")
+            if hasattr(report, 'prediction'):
+                logger.info(f"Prediction: {report.prediction}")

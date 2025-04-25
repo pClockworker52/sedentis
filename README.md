@@ -168,9 +168,6 @@ Contributions are welcome! To improve the Sedentis bot:
 4. Push to the branch: `git push origin new-feature`
 5. Submit a pull request
 
-## License
-
-[License information]
 
 ---
 

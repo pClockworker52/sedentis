@@ -506,12 +506,12 @@ if __name__ == "__main__":
         skip_previously_forecasted_questions=True,
         llms={  # choose your model names or GeneralLlm llms here, otherwise defaults will be chosen for you
             "default": GeneralLlm(
-                model="metaculus/anthropic/claude-3-7-sonnet-20250219",
+                model="anthropic/claude-3-7-sonnet-latest",
                 temperature=0.3,
                 timeout=120,
                 allowed_tries=2,
             ),
-            "summarizer": "metaculus/anthropic/claude-3-7-sonnet-20250219",
+            "summarizer": "anthropic/claude-3-7-sonnet-latest",
         },
     )
 

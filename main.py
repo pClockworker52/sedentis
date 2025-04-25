@@ -496,7 +496,8 @@ if __name__ == "__main__":
         "quarterly_cup",
         "test_questions",
     ], "Invalid run mode"
-
+    my_anthropic_key = os.getenv("MY_PERSONAL_ANTHROPIC_KEY")
+    
     template_bot = TemplateForecaster(
         research_reports_per_question=1,
         predictions_per_research_report=5,
@@ -504,14 +505,24 @@ if __name__ == "__main__":
         publish_reports_to_metaculus=True,
         folder_to_save_reports_to=None,
         skip_previously_forecasted_questions=True,
-        llms={  # choose your model names or GeneralLlm llms here, otherwise defaults will be chosen for you
+        llms={
             "default": GeneralLlm(
-                model="metaculus/anthropic/claude-3-5-sonnet-20241022",
+                # Use the direct Anthropic model name
+                model="anthropic/claude-3-7-sonnet-latest",
                 temperature=0.3,
                 timeout=120,
                 allowed_tries=2,
+                # Pass your API key directly here
+                api_key=my_anthropic_key
             ),
-            "summarizer": "openai/gpt-4o-mini",
+            "summarizer": GeneralLlm(
+                # Also configure the summarizer if needed
+                model="anthropic/claude-3-7-sonnet-latest",
+                temperature=0.3,
+                timeout=120,
+                allowed_tries=2,
+                api_key=my_anthropic_key
+            ),
         },
     )
 

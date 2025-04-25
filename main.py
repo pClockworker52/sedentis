@@ -66,11 +66,14 @@ class TemplateForecaster(ForecastBot):
             try:
                 research = ""
                 if os.getenv("OPENROUTER_API_KEY"):
-                    logger.info(f"Calling perplexity for question: {question.question_id}")
+                    logger.info(f"Starting research for question: {question.question_id}")
                     research = await self._call_perplexity(
                         question.question_text, use_open_router=True
                     )
-                    logger.info(f"Research completed successfully, length: {len(str(research))}")
+                    logger.info(f"Research response type: {type(research)}")
+                    logger.info(f"Research completed, length: {len(str(research))}")
+                    # Log the complete research content for debugging
+                    logger.debug(f"FULL RESEARCH: {research}")
                 else:
                     logger.warning(
                         f"No research provider found when processing question URL {question.page_url}. Will pass back empty string."
@@ -78,18 +81,13 @@ class TemplateForecaster(ForecastBot):
                     research = ""
                 
                 logger.info(
-                    f"Found Research for URL {question.page_url}:\n{research[:300]}..." if len(research) > 300 else research
+                    f"Found Research for URL {question.page_url}:\n{research[:300]}..." if len(str(research)) > 300 else research
                 )
                 return research
             except Exception as e:
-                logger.error(f"DETAILED ERROR in run_research: {type(e).__name__}: {str(e)}")
-                logger.error(f"Error attributes: {', '.join([attr for attr in dir(e) if not attr.startswith('_')])}")
-                # Add more context to the exception
-                detailed_exc = Exception(f"Error researching question {question.question_id}: {type(e).__name__}: {str(e)}")
-                detailed_exc.original_error = e
-                detailed_exc.question_url = question.page_url
-                detailed_exc.question_id = question.question_id
-                raise detailed_exc
+                logger.error(f"ERROR in run_research: {type(e).__name__}: {str(e)}")
+                logger.error("Stack trace:", exc_info=True)
+                raise
 
     async def _call_perplexity(
         self, question: str, use_open_router: bool = False
@@ -174,7 +172,10 @@ class TemplateForecaster(ForecastBot):
         self, question: BinaryQuestion, research: str
     ) -> ReasonedPrediction[float]:
         try:
+            # Log detailed information about inputs
             logger.info(f"Starting binary forecast for question {question.question_id}")
+            logger.info(f"Research length: {len(research)}")
+            logger.info(f"Research snippet: {research[:200]}...")
             prompt = clean_indents(
                 f"""
                 **Your Role:**
@@ -236,32 +237,39 @@ class TemplateForecaster(ForecastBot):
                 The last thing you write is your final probability as: "Probability: ZZ%", 0-100
                 """
             )
-            logger.info(f"Calling LLM for binary forecast with prompt length: {len(prompt)}")
-            logger.info(f"Research provided for forecast has length: {len(research)}")
+            logger.info(f"About to call LLM with prompt length: {len(prompt)}")
             
-            reasoning = await self.get_llm("default", "llm").invoke(prompt)
-            logger.info(f"Received reasoning with length: {len(reasoning)}")
+            # Check if self.get_llm is working as expected
+            llm = self.get_llm("default", "llm")
+            logger.info(f"Retrieved LLM: {type(llm).__name__}")
             
+            # Make the actual API call with extensive error trapping
+            try:
+                reasoning = await llm.invoke(prompt)
+                logger.info(f"Successfully received reasoning of length {len(reasoning)}")
+            except Exception as llm_error:
+                logger.error(f"Error during LLM invoke: {type(llm_error).__name__}: {str(llm_error)}")
+                logger.error(f"Error details: {llm_error.__dict__ if hasattr(llm_error, '__dict__') else 'No __dict__'}")
+                # Forward a more informative exception
+                raise Exception(f"LLM invoke failed: {type(llm_error).__name__}: {str(llm_error)}") from llm_error
+            
+            # Process the response
             prediction: float = PredictionExtractor.extract_last_percentage_value(
                 reasoning, max_prediction=1, min_prediction=0
             )
             logger.info(
-                f"Forecasted URL {question.page_url} as {prediction} with reasoning summary:\n{reasoning[:300]}..."
+                f"Extracted prediction {prediction} from reasoning"
             )
             return ReasonedPrediction(
                 prediction_value=prediction, reasoning=reasoning
             )
         except Exception as e:
             logger.error(f"CRITICAL ERROR in _run_forecast_on_binary: {type(e).__name__}: {str(e)}")
-            logger.error(f"Error occurred with question ID: {question.question_id}, URL: {question.page_url}")
-            logger.error(f"Stack trace: ", exc_info=True)
-            # Include detailed context in the exception
-            detailed_exc = Exception(f"Error forecasting binary question {question.question_id}: {type(e).__name__}: {str(e)}")
-            detailed_exc.original_error = e
-            detailed_exc.question_url = question.page_url
-            detailed_exc.question_id = question.question_id
-            detailed_exc.research_length = len(research) if research else 0
-            raise detailed_exc
+            # Add a check specifically for the request attribute error
+            if str(e).find("'request'") >= 0:
+                logger.error("This appears to be the 'request attribute' error. Root cause may be a malformed response or API issue.")
+            logger.error("Stack trace:", exc_info=True)
+            raise
 
     async def _run_forecast_on_multiple_choice(
         self, question: MultipleChoiceQuestion, research: str

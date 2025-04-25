@@ -35,7 +35,7 @@ class TemplateForecaster(ForecastBot):
     - You now set your llms when you initialize the bot (making it easier to switch between and benchmark different models)
     """
 
-    _max_concurrent_questions = 2  # Set this to whatever works for your search-provider/ai-model rate limits
+    _max_concurrent_questions = 1  # Set this to whatever works for your search-provider/ai-model rate limits
     _concurrency_limiter = asyncio.Semaphore(_max_concurrent_questions)
 
     async def run_research(self, question: MetaculusQuestion) -> str:
@@ -592,7 +592,7 @@ if __name__ == "__main__":
     # Suppress LiteLLM logging
     litellm_logger = logging.getLogger("LiteLLM")
     litellm_logger.setLevel(logging.WARNING)
-    litellm_logger.propagate = False
+    litellm_logger.propagate = True
 
     parser = argparse.ArgumentParser(
         description="Run the Q1TemplateBot forecasting system"
@@ -625,7 +625,7 @@ if __name__ == "__main__":
         llms={
             "default": GeneralLlm(
                 # Use the direct Anthropic model name
-                model="anthropic/claude-3-7-sonnet-latest",
+                model="anthropic/claude-3-7-sonnet-20250219",
                 temperature=0.3,
                 timeout=120,
                 allowed_tries=2,
@@ -634,7 +634,7 @@ if __name__ == "__main__":
             ),
             "summarizer": GeneralLlm(
                 # Also configure the summarizer if needed
-                model="anthropic/claude-3-7-sonnet-latest",
+                model="anthropic/claude-3-7-sonnet-20250219",
                 temperature=0.3,
                 timeout=120,
                 allowed_tries=2,
@@ -655,7 +655,7 @@ if __name__ == "__main__":
         template_bot.skip_previously_forecasted_questions = False
         forecast_reports = asyncio.run(
             template_bot.forecast_on_tournament(
-                MetaculusApi.CURRENT_QUARTERLY_CUP_ID, return_exceptions=True
+                32564, return_exceptions=True
             )
         )
     elif run_mode == "test_questions":

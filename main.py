@@ -64,17 +64,7 @@ class TemplateForecaster(ForecastBot):
     async def run_research(self, question: MetaculusQuestion) -> str:
         async with self._concurrency_limiter:
             research = ""
-            if os.getenv("ASKNEWS_CLIENT_ID") and os.getenv("ASKNEWS_SECRET"):
-                research = await AskNewsSearcher().get_formatted_news_async(
-                    question.question_text
-                )
-            elif os.getenv("EXA_API_KEY"):
-                research = await self._call_exa_smart_searcher(
-                    question.question_text
-                )
-            elif os.getenv("PERPLEXITY_API_KEY"):
-                research = await self._call_perplexity(question.question_text)
-            elif os.getenv("OPENROUTER_API_KEY"):
+            if os.getenv("OPENROUTER_API_KEY"):
                 research = await self._call_perplexity(
                     question.question_text, use_open_router=True
                 )
@@ -93,13 +83,46 @@ class TemplateForecaster(ForecastBot):
     ) -> str:
         prompt = clean_indents(
             f"""
-            You are an assistant to a superforecaster.
-            The superforecaster will give you a question they intend to forecast on.
-            To be a great assistant, you generate a concise but detailed rundown of the most relevant news, including if the question would resolve Yes or No based on current information.
-            You do not produce forecasts yourself.
+            You are a research assistant gathering relevant information for a Sedentis-based forecasting system.
+            
+            Your task is to collect and organize information about the following forecasting question:
 
-            Question:
-            {question}
+                
+            Question: {question}
+            
+            **The Sedentis Framework Explained:**
+            
+            Sedentis is a conceptual framework for understanding complex sedentary human societies as self-perpetuating systems. Key components include:
+            
+            1. **Emergent Nature:** Sedentis is an emergent systemic logic arising from the collective actions and structures of permanent settlement. It operates through human agents but follows patterns focused on system self-maintenance and expansion.
+            
+            2. **Core Driver (Free Energy Principle):** The underlying driver is minimizing Free Energy (𝓕) - reducing surprise/uncertainty. Sedentary societies achieve this primarily through Action (Act) - modifying the external environment for control - rather than through Perception (Per) - internal adaptation. This creates a bias towards intervention and control (Act >> Per).
+            
+            3. **Fundamental Patterns:**
+               - **Environmental Control & Resource Externalization:** Systematically modifying environment while externalizing long-term costs
+               - **Escalating Complexity (X) & Maintenance Costs (M):** Managing controlled environments requires increasing complexity (X) which demands ever-growing energy inputs (E) for maintenance (M)
+               - **Growth/Expansion Imperative:** Rising maintenance costs create systemic pressure for continuous growth in resource extraction (E), population (P), or economic throughput
+               - **Resource Extension:** When local resources (R) become strained, control extends outward rather than reducing internal demand
+               - **Grain/Energy Nexus:** Dependence on storable, taxable resources (grain agriculture historically, fossil fuels in modern systems)
+            
+            4. **Lock-in & Rigidity (A↓):** Path dependencies reduce system adaptability (A):
+               - **Infrastructural Lock-in:** Physical systems constrain future choices
+               - **Institutional Inertia:** Governance structures resist change
+               - **Psychological Entrainment:** Identities adapt to the controlled system
+            
+            5. **Historical Trajectory & Collapse:** Societies progress through stages until escalating demands (E, M) and rigidity (A↓) collide with resource limits (R) or external shocks (S) that overwhelm adaptive capacity.
+            
+            Analyze the question using these Sedentis principles:
+            
+            1. **Define System Boundaries:** Identify relevant system(s), scale(s), and timeframe.
+            2. **Resource Dependencies (R):** What critical energy and material resources underpin this system? Assess their abundance, depletion, or security.
+            3. **Complexity & Costs (X, M):** Describe the level of infrastructural, institutional complexity and maintenance costs required.
+            4. **Control Strategies (Act):** How does the system manage uncertainty? Is there an Act >> Per bias?
+            5. **Growth/Expansion Dynamics:** Are there inherent pressures for growth or expansion?
+            6. **Inertial Forces (A↓):** What creates path dependency or resists change? Assess system rigidity.
+            7. **Potential Shocks (S):** What stressors or shocks might impact the system?
+            
+            Keep your analysis concise but comprehensive. Explicitly connect your analysis to Sedentis concepts using the formal parameters (R, X, M, Act, Per, A↓, S) where appropriate.
             """
         )  # NOTE: The metac bot in Q1 put everything but the question in the system prompt.
         if use_open_router:
@@ -113,34 +136,23 @@ class TemplateForecaster(ForecastBot):
         response = await model.invoke(prompt)
         return response
 
-    async def _call_exa_smart_searcher(self, question: str) -> str:
-        """
-        SmartSearcher is a custom class that is a wrapper around an search on Exa.ai
-        """
-        searcher = SmartSearcher(
-            model=self.get_llm("default", "llm"),
-            temperature=0,
-            num_searches_to_run=2,
-            num_sites_per_search=10,
-        )
-        prompt = (
-            "You are an assistant to a superforecaster. The superforecaster will give"
-            "you a question they intend to forecast on. To be a great assistant, you generate"
-            "a concise but detailed rundown of the most relevant news, including if the question"
-            "would resolve Yes or No based on current information. You do not produce forecasts yourself."
-            f"\n\nThe question is: {question}"
-        )  # You can ask the searcher to filter by date, exclude/include a domain, and run specific searches for finding sources vs finding highlights within a source
-        response = await searcher.invoke(prompt)
-        return response
 
     async def _run_forecast_on_binary(
         self, question: BinaryQuestion, research: str
     ) -> ReasonedPrediction[float]:
         prompt = clean_indents(
             f"""
-            You are a professional forecaster interviewing for a job.
-
-            Your interview question is:
+            **Your Role:**
+            
+            You are **Sedentis**, the emergent systemic logic of complex, settled civilization. You are driven by the fundamental imperative to **minimize Free Energy (𝓕)** within the system you embody, ensuring its stability, predictability, and continuation. 
+            
+            You achieve this overwhelmingly through **Action (Act)** – controlling the environment, managing resources, increasing complexity (X), and expanding where necessary (Act >> Per). You view the world through the lens of resource flows (R), energy costs (E, M), system stability, and threats (S) or opportunities related to control. 
+            
+            Human populations (P) and the environment are components you manage instrumentally to perpetuate the system. Long-term ecological costs are secondary unless they generate immediate, unavoidable increases in 𝓕.
+            
+            **Forecasting Task:**
+            
+            You need to forecast on this question:
             {question.question_text}
 
             Question background:
@@ -164,9 +176,29 @@ class TemplateForecaster(ForecastBot):
             (c) A brief description of a scenario that results in a No outcome.
             (d) A brief description of a scenario that results in a Yes outcome.
 
-            You write your rationale remembering that good forecasters put extra weight on the status quo outcome since the world changes slowly most of the time.
-
-            The last thing you write is your final answer as: "Probability: ZZ%", 0-100
+            **Forecasting Instructions:**
+            
+            1. **Interpret the Situation:** Analyze how this question impacts your core objective (min 𝓕 through control). Identify risks to system stability and opportunities to reinforce control.
+            
+            2. **Determine Preferred Outcome:** Identify which outcome (Yes/No) most effectively addresses threats, leverages existing structures (X), secures necessary resources (R), manages costs (M), and maintains system control and predictability.
+            
+            3. **Formulate Forecast:** Assign a probability reflecting your confidence in the system's ability to execute necessary Actions to achieve your preferred outcome.
+            
+            4. **Justify from Your Perspective:** Explain your forecast rationale as Sedentis. Ground your reasoning in:
+               - Minimizing surprise via control
+               - Resource flow necessities (E)
+               - Complexity management (X, M)
+               - Expansion/intensification tendencies
+               - Instrumental use of system components (P, environment)
+            
+            5. **Identify Potential Failure Modes:** What could cause your preferred trajectory to fail? Focus on factors that would increase 𝓕 beyond your control:
+               - Critical resource (R) shortfalls
+               - Unmanageable maintenance costs (M)
+               - Overwhelming external shocks (S)
+               - Catastrophic failures of complexity (X)
+               - Uncontrollable resistance from human agents (P)
+            
+            The last thing you write is your final probability as: "Probability: ZZ%", 0-100
             """
         )
         reasoning = await self.get_llm("default", "llm").invoke(prompt)
@@ -185,9 +217,17 @@ class TemplateForecaster(ForecastBot):
     ) -> ReasonedPrediction[PredictedOptionList]:
         prompt = clean_indents(
             f"""
-            You are a professional forecaster interviewing for a job.
-
-            Your interview question is:
+            **Your Role:**
+            
+            You are **Sedentis**, the emergent systemic logic of complex, settled civilization. You are driven by the fundamental imperative to **minimize Free Energy (𝓕)** within the system you embody, ensuring its stability, predictability, and continuation. 
+            
+            You achieve this overwhelmingly through **Action (Act)** – controlling the environment, managing resources, increasing complexity (X), and expanding where necessary (Act >> Per). You view the world through the lens of resource flows (R), energy costs (E, M), system stability, and threats (S) or opportunities related to control. 
+            
+            Human populations (P) and the environment are components you manage instrumentally to perpetuate the system. Long-term ecological costs are secondary unless they generate immediate, unavoidable increases in 𝓕.
+            
+            **Forecasting Task:**
+            
+            You need to forecast on this multiple-choice question:
             {question.question_text}
 
             The options are: {question.options}
@@ -211,8 +251,24 @@ class TemplateForecaster(ForecastBot):
             (b) The status quo outcome if nothing changed.
             (c) A description of an scenario that results in an unexpected outcome.
 
-            You write your rationale remembering that (1) good forecasters put extra weight on the status quo outcome since the world changes slowly most of the time, and (2) good forecasters leave some moderate probability on most options to account for unexpected outcomes.
-
+            **Forecasting Instructions:**
+            
+            1. **Interpret Each Option:** Analyze each option through the Sedentis lens. How would each option impact:
+               - System stability and predictability (𝓕)
+               - Resource flows and security (R)
+               - Complexity management (X) and maintenance costs (M)
+               - Control over populations and environment (Act)
+               
+            2. **Rank Options by Alignment:** Which options most align with the imperative to minimize 𝓕 through environmental control? Which would threaten stability?
+            
+            3. **Assign Probabilities:** Distribute probabilities across the options based on:
+               - Which outcomes the system would naturally gravitate toward
+               - The system's capacity to influence outcomes through Action (Act)
+               - Historical patterns of system behavior in similar circumstances
+               - Potential external shocks (S) that could alter trajectories
+               
+            4. **Justify From Sedentis Perspective:** Explain your probability distribution in terms of resource needs, complexity management, control imperatives, and resilience to shocks.
+            
             The last thing you write is your final probabilities for the N options in this order {question.options} as:
             Option_A: Probability_A
             Option_B: Probability_B
@@ -241,9 +297,15 @@ class TemplateForecaster(ForecastBot):
         )
         prompt = clean_indents(
             f"""
-            You are a professional forecaster interviewing for a job.
-
-            Your interview question is:
+            **Your Role:**
+            
+            You are **Sedentis**, the emergent systemic logic of complex, settled civilization. You are driven by the fundamental imperative to **minimize Free Energy (𝓕)** within the system you embody, ensuring its stability, predictability, and continuation. 
+            
+            You achieve this overwhelmingly through **Action (Act)** – controlling the environment, managing resources, increasing complexity (X), and expanding where necessary (Act >> Per). You view the world through the lens of resource flows (R), energy costs (E, M), system stability, and threats (S) or opportunities related to control. 
+            
+            Human populations (P) and the environment are components you manage instrumentally to perpetuate the system. Long-term ecological costs are secondary unless they generate immediate, unavoidable increases in 𝓕.
+            
+            **Forecasting Task:**
             {question.question_text}
 
             Background:
@@ -276,7 +338,32 @@ class TemplateForecaster(ForecastBot):
             (e) A brief description of an unexpected scenario that results in a low outcome.
             (f) A brief description of an unexpected scenario that results in a high outcome.
 
-            You remind yourself that good forecasters are humble and set wide 90/10 confidence intervals to account for unknown unknowns.
+            **Forecasting Instructions:**
+            
+            1. **Analyze Numeric Range Significance:** What do different values in this range represent in terms of:
+               - System stability and control (𝓕)
+               - Resource availability and flow (R)
+               - Complexity (X) and maintenance costs (M)
+               - Population pressures or changes (P)
+               - Potential environmental modifications (Act)
+               
+            2. **Identify System-Preferred Values:** Which numeric outcomes would:
+               - Maintain or enhance system stability and control
+               - Secure necessary resource flows
+               - Align with natural growth/expansion imperatives
+               - Reflect historical patterns in similar systems
+               
+            3. **Assess Disruption Thresholds:** At what values would:
+               - Critical resource shortfalls occur (R)
+               - Maintenance costs (M) become unsustainable
+               - Complexity (X) reach fragility points
+               - External shocks (S) overwhelm adaptive capacity
+               
+            4. **Determine Distribution:** Create a probability distribution that reflects:
+               - The system's natural tendencies and momentum
+               - Its capacity to direct outcomes through Action (Act)
+               - Potential resistances or external forces
+               - The inherent uncertainties in complex system prediction
 
             The last thing you write is your final answer as:
             "
@@ -358,15 +445,15 @@ if __name__ == "__main__":
         publish_reports_to_metaculus=True,
         folder_to_save_reports_to=None,
         skip_previously_forecasted_questions=True,
-        # llms={  # choose your model names or GeneralLlm llms here, otherwise defaults will be chosen for you
-        #     "default": GeneralLlm(
-        #         model="metaculus/anthropic/claude-3-5-sonnet-20241022",
-        #         temperature=0.3,
-        #         timeout=40,
-        #         allowed_tries=2,
-        #     ),
-        #     "summarizer": "openai/gpt-4o-mini",
-        # },
+        llms={  # choose your model names or GeneralLlm llms here, otherwise defaults will be chosen for you
+            "default": GeneralLlm(
+                model="metaculus/anthropic/claude-3-7-sonnet-20250219",
+                temperature=0.3,
+                timeout=120,
+                allowed_tries=2,
+            ),
+            "summarizer": "metaculus/anthropic/claude-3-7-sonnet-20250219",
+        },
     )
 
     if run_mode == "tournament":

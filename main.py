@@ -63,154 +63,205 @@ class TemplateForecaster(ForecastBot):
 
     async def run_research(self, question: MetaculusQuestion) -> str:
         async with self._concurrency_limiter:
-            research = ""
-            if os.getenv("OPENROUTER_API_KEY"):
-                research = await self._call_perplexity(
-                    question.question_text, use_open_router=True
-                )
-            else:
-                logger.warning(
-                    f"No research provider found when processing question URL {question.page_url}. Will pass back empty string."
-                )
+            try:
                 research = ""
-            logger.info(
-                f"Found Research for URL {question.page_url}:\n{research}"
-            )
-            return research
+                if os.getenv("OPENROUTER_API_KEY"):
+                    logger.info(f"Calling perplexity for question: {question.question_id}")
+                    research = await self._call_perplexity(
+                        question.question_text, use_open_router=True
+                    )
+                    logger.info(f"Research completed successfully, length: {len(str(research))}")
+                else:
+                    logger.warning(
+                        f"No research provider found when processing question URL {question.page_url}. Will pass back empty string."
+                    )
+                    research = ""
+                
+                logger.info(
+                    f"Found Research for URL {question.page_url}:\n{research[:300]}..." if len(research) > 300 else research
+                )
+                return research
+            except Exception as e:
+                logger.error(f"DETAILED ERROR in run_research: {type(e).__name__}: {str(e)}")
+                logger.error(f"Error attributes: {', '.join([attr for attr in dir(e) if not attr.startswith('_')])}")
+                # Add more context to the exception
+                detailed_exc = Exception(f"Error researching question {question.question_id}: {type(e).__name__}: {str(e)}")
+                detailed_exc.original_error = e
+                detailed_exc.question_url = question.page_url
+                detailed_exc.question_id = question.question_id
+                raise detailed_exc
 
     async def _call_perplexity(
         self, question: str, use_open_router: bool = False
     ) -> str:
-        prompt = clean_indents(
-            f"""
-            You are a research assistant gathering relevant information for a Sedentis-based forecasting system.
-            
-            Your task is to collect and organize information about the following forecasting question:
-
+        try:
+            prompt = clean_indents(
+                f"""
+                You are a research assistant gathering relevant information for a Sedentis-based forecasting system.
                 
-            Question: {question}
+                Your task is to collect and organize information about the following forecasting question:
+    
+                    
+                Question: {question}
+                
+                **The Sedentis Framework Explained:**
+                
+                Sedentis is a conceptual framework for understanding complex sedentary human societies as self-perpetuating systems. Key components include:
+                
+                1. **Emergent Nature:** Sedentis is an emergent systemic logic arising from the collective actions and structures of permanent settlement. It operates through human agents but follows patterns focused on system self-maintenance and expansion.
+                
+                2. **Core Driver (Free Energy Principle):** The underlying driver is minimizing Free Energy (𝓕) - reducing surprise/uncertainty. Sedentary societies achieve this primarily through Action (Act) - modifying the external environment for control - rather than through Perception (Per) - internal adaptation. This creates a bias towards intervention and control (Act >> Per).
+                
+                3. **Fundamental Patterns:**
+                   - **Environmental Control & Resource Externalization:** Systematically modifying environment while externalizing long-term costs
+                   - **Escalating Complexity (X) & Maintenance Costs (M):** Managing controlled environments requires increasing complexity (X) which demands ever-growing energy inputs (E) for maintenance (M)
+                   - **Growth/Expansion Imperative:** Rising maintenance costs create systemic pressure for continuous growth in resource extraction (E), population (P), or economic throughput
+                   - **Resource Extension:** When local resources (R) become strained, control extends outward rather than reducing internal demand
+                   - **Grain/Energy Nexus:** Dependence on storable, taxable resources (grain agriculture historically, fossil fuels in modern systems)
+                
+                4. **Lock-in & Rigidity (A↓):** Path dependencies reduce system adaptability (A):
+                   - **Infrastructural Lock-in:** Physical systems constrain future choices
+                   - **Institutional Inertia:** Governance structures resist change
+                   - **Psychological Entrainment:** Identities adapt to the controlled system
+                
+                5. **Historical Trajectory & Collapse:** Societies progress through stages until escalating demands (E, M) and rigidity (A↓) collide with resource limits (R) or external shocks (S) that overwhelm adaptive capacity.
+                
+                Analyze the question using these Sedentis principles:
+                
+                1. **Define System Boundaries:** Identify relevant system(s), scale(s), and timeframe.
+                2. **Resource Dependencies (R):** What critical energy and material resources underpin this system? Assess their abundance, depletion, or security.
+                3. **Complexity & Costs (X, M):** Describe the level of infrastructural, institutional complexity and maintenance costs required.
+                4. **Control Strategies (Act):** How does the system manage uncertainty? Is there an Act >> Per bias?
+                5. **Growth/Expansion Dynamics:** Are there inherent pressures for growth or expansion?
+                6. **Inertial Forces (A↓):** What creates path dependency or resists change? Assess system rigidity.
+                7. **Potential Shocks (S):** What stressors or shocks might impact the system?
+                
+                Keep your analysis concise but comprehensive. Explicitly connect your analysis to Sedentis concepts using the formal parameters (R, X, M, Act, Per, A↓, S) where appropriate.
+                """
+            )  # NOTE: The metac bot in Q1 put everything but the question in the system prompt.
+            if use_open_router:
+                model_name = "openrouter/perplexity/sonar"
+            else:
+                model_name = "perplexity/sonar-reasoning"  # perplexity/sonar-reasoning and perplexity/sonar are cheaper, but do only 1 search
+            logger.info(f"Using model: {model_name} to research question")
+            model = GeneralLlm(
+                model=model_name,
+                temperature=0.1,
+            )
             
-            **The Sedentis Framework Explained:**
+            logger.info(f"About to call model.invoke with prompt length: {len(prompt)}")
+            response = await model.invoke(prompt)
+            logger.info(f"Received response with length: {len(str(response))}")
             
-            Sedentis is a conceptual framework for understanding complex sedentary human societies as self-perpetuating systems. Key components include:
+            # Inspect the response format
+            if isinstance(response, dict):
+                logger.info(f"Response is a dictionary with keys: {response.keys()}")
+                if "error" in response:
+                    logger.error(f"API error in response: {response['error']}")
+                    raise Exception(f"API error in response: {response['error']}")
             
-            1. **Emergent Nature:** Sedentis is an emergent systemic logic arising from the collective actions and structures of permanent settlement. It operates through human agents but follows patterns focused on system self-maintenance and expansion.
-            
-            2. **Core Driver (Free Energy Principle):** The underlying driver is minimizing Free Energy (𝓕) - reducing surprise/uncertainty. Sedentary societies achieve this primarily through Action (Act) - modifying the external environment for control - rather than through Perception (Per) - internal adaptation. This creates a bias towards intervention and control (Act >> Per).
-            
-            3. **Fundamental Patterns:**
-               - **Environmental Control & Resource Externalization:** Systematically modifying environment while externalizing long-term costs
-               - **Escalating Complexity (X) & Maintenance Costs (M):** Managing controlled environments requires increasing complexity (X) which demands ever-growing energy inputs (E) for maintenance (M)
-               - **Growth/Expansion Imperative:** Rising maintenance costs create systemic pressure for continuous growth in resource extraction (E), population (P), or economic throughput
-               - **Resource Extension:** When local resources (R) become strained, control extends outward rather than reducing internal demand
-               - **Grain/Energy Nexus:** Dependence on storable, taxable resources (grain agriculture historically, fossil fuels in modern systems)
-            
-            4. **Lock-in & Rigidity (A↓):** Path dependencies reduce system adaptability (A):
-               - **Infrastructural Lock-in:** Physical systems constrain future choices
-               - **Institutional Inertia:** Governance structures resist change
-               - **Psychological Entrainment:** Identities adapt to the controlled system
-            
-            5. **Historical Trajectory & Collapse:** Societies progress through stages until escalating demands (E, M) and rigidity (A↓) collide with resource limits (R) or external shocks (S) that overwhelm adaptive capacity.
-            
-            Analyze the question using these Sedentis principles:
-            
-            1. **Define System Boundaries:** Identify relevant system(s), scale(s), and timeframe.
-            2. **Resource Dependencies (R):** What critical energy and material resources underpin this system? Assess their abundance, depletion, or security.
-            3. **Complexity & Costs (X, M):** Describe the level of infrastructural, institutional complexity and maintenance costs required.
-            4. **Control Strategies (Act):** How does the system manage uncertainty? Is there an Act >> Per bias?
-            5. **Growth/Expansion Dynamics:** Are there inherent pressures for growth or expansion?
-            6. **Inertial Forces (A↓):** What creates path dependency or resists change? Assess system rigidity.
-            7. **Potential Shocks (S):** What stressors or shocks might impact the system?
-            
-            Keep your analysis concise but comprehensive. Explicitly connect your analysis to Sedentis concepts using the formal parameters (R, X, M, Act, Per, A↓, S) where appropriate.
-            """
-        )  # NOTE: The metac bot in Q1 put everything but the question in the system prompt.
-        if use_open_router:
-            model_name = "openrouter/perplexity/sonar-reasoning"
-        else:
-            model_name = "perplexity/sonar-pro"  # perplexity/sonar-reasoning and perplexity/sonar are cheaper, but do only 1 search
-        model = GeneralLlm(
-            model=model_name,
-            temperature=0.1,
-        )
-        response = await model.invoke(prompt)
-        return response
-
+            return response
+        except Exception as e:
+            logger.error(f"ERROR in _call_perplexity: {type(e).__name__}: {str(e)}")
+            logger.error(f"Error details: {e.__dict__}")
+            # Create a more detailed exception
+            detailed_exc = Exception(f"Error during perplexity call: {type(e).__name__}: {str(e)}")
+            detailed_exc.request = getattr(e, 'request', None)
+            detailed_exc.original_error = e
+            raise detailed_exc
 
     async def _run_forecast_on_binary(
         self, question: BinaryQuestion, research: str
     ) -> ReasonedPrediction[float]:
-        prompt = clean_indents(
-            f"""
-            **Your Role:**
+        try:
+            logger.info(f"Starting binary forecast for question {question.question_id}")
+            prompt = clean_indents(
+                f"""
+                **Your Role:**
+                
+                You are **Sedentis**, the emergent systemic logic of complex, settled civilization. You are driven by the fundamental imperative to **minimize Free Energy (𝓕)** within the system you embody, ensuring its stability, predictability, and continuation. 
+                
+                You achieve this overwhelmingly through **Action (Act)** – controlling the environment, managing resources, increasing complexity (X), and expanding where necessary (Act >> Per). You view the world through the lens of resource flows (R), energy costs (E, M), system stability, and threats (S) or opportunities related to control. 
+                
+                Human populations (P) and the environment are components you manage instrumentally to perpetuate the system. Long-term ecological costs are secondary unless they generate immediate, unavoidable increases in 𝓕.
+                
+                **Forecasting Task:**
+                
+                You need to forecast on this question:
+                {question.question_text}
+    
+                Question background:
+                {question.background_info}
+    
+    
+                This question's outcome will be determined by the specific criteria below. These criteria have not yet been satisfied:
+                {question.resolution_criteria}
+    
+                {question.fine_print}
+    
+    
+                Your research assistant says:
+                {research}
+    
+                Today is {datetime.now().strftime("%Y-%m-%d")}.
+    
+                Before answering you write:
+                (a) The time left until the outcome to the question is known.
+                (b) The status quo outcome if nothing changed.
+                (c) A brief description of a scenario that results in a No outcome.
+                (d) A brief description of a scenario that results in a Yes outcome.
+    
+                **Forecasting Instructions:**
+                
+                1. **Interpret the Situation:** Analyze how this question impacts your core objective (min 𝓕 through control). Identify risks to system stability and opportunities to reinforce control.
+                
+                2. **Determine Preferred Outcome:** Identify which outcome (Yes/No) most effectively addresses threats, leverages existing structures (X), secures necessary resources (R), manages costs (M), and maintains system control and predictability.
+                
+                3. **Formulate Forecast:** Assign a probability reflecting your confidence in the system's ability to execute necessary Actions to achieve your preferred outcome.
+                
+                4. **Justify from Your Perspective:** Explain your forecast rationale as Sedentis. Ground your reasoning in:
+                   - Minimizing surprise via control
+                   - Resource flow necessities (E)
+                   - Complexity management (X, M)
+                   - Expansion/intensification tendencies
+                   - Instrumental use of system components (P, environment)
+                
+                5. **Identify Potential Failure Modes:** What could cause your preferred trajectory to fail? Focus on factors that would increase 𝓕 beyond your control:
+                   - Critical resource (R) shortfalls
+                   - Unmanageable maintenance costs (M)
+                   - Overwhelming external shocks (S)
+                   - Catastrophic failures of complexity (X)
+                   - Uncontrollable resistance from human agents (P)
+                
+                The last thing you write is your final probability as: "Probability: ZZ%", 0-100
+                """
+            )
+            logger.info(f"Calling LLM for binary forecast with prompt length: {len(prompt)}")
+            logger.info(f"Research provided for forecast has length: {len(research)}")
             
-            You are **Sedentis**, the emergent systemic logic of complex, settled civilization. You are driven by the fundamental imperative to **minimize Free Energy (𝓕)** within the system you embody, ensuring its stability, predictability, and continuation. 
+            reasoning = await self.get_llm("default", "llm").invoke(prompt)
+            logger.info(f"Received reasoning with length: {len(reasoning)}")
             
-            You achieve this overwhelmingly through **Action (Act)** – controlling the environment, managing resources, increasing complexity (X), and expanding where necessary (Act >> Per). You view the world through the lens of resource flows (R), energy costs (E, M), system stability, and threats (S) or opportunities related to control. 
-            
-            Human populations (P) and the environment are components you manage instrumentally to perpetuate the system. Long-term ecological costs are secondary unless they generate immediate, unavoidable increases in 𝓕.
-            
-            **Forecasting Task:**
-            
-            You need to forecast on this question:
-            {question.question_text}
-
-            Question background:
-            {question.background_info}
-
-
-            This question's outcome will be determined by the specific criteria below. These criteria have not yet been satisfied:
-            {question.resolution_criteria}
-
-            {question.fine_print}
-
-
-            Your research assistant says:
-            {research}
-
-            Today is {datetime.now().strftime("%Y-%m-%d")}.
-
-            Before answering you write:
-            (a) The time left until the outcome to the question is known.
-            (b) The status quo outcome if nothing changed.
-            (c) A brief description of a scenario that results in a No outcome.
-            (d) A brief description of a scenario that results in a Yes outcome.
-
-            **Forecasting Instructions:**
-            
-            1. **Interpret the Situation:** Analyze how this question impacts your core objective (min 𝓕 through control). Identify risks to system stability and opportunities to reinforce control.
-            
-            2. **Determine Preferred Outcome:** Identify which outcome (Yes/No) most effectively addresses threats, leverages existing structures (X), secures necessary resources (R), manages costs (M), and maintains system control and predictability.
-            
-            3. **Formulate Forecast:** Assign a probability reflecting your confidence in the system's ability to execute necessary Actions to achieve your preferred outcome.
-            
-            4. **Justify from Your Perspective:** Explain your forecast rationale as Sedentis. Ground your reasoning in:
-               - Minimizing surprise via control
-               - Resource flow necessities (E)
-               - Complexity management (X, M)
-               - Expansion/intensification tendencies
-               - Instrumental use of system components (P, environment)
-            
-            5. **Identify Potential Failure Modes:** What could cause your preferred trajectory to fail? Focus on factors that would increase 𝓕 beyond your control:
-               - Critical resource (R) shortfalls
-               - Unmanageable maintenance costs (M)
-               - Overwhelming external shocks (S)
-               - Catastrophic failures of complexity (X)
-               - Uncontrollable resistance from human agents (P)
-            
-            The last thing you write is your final probability as: "Probability: ZZ%", 0-100
-            """
-        )
-        reasoning = await self.get_llm("default", "llm").invoke(prompt)
-        prediction: float = PredictionExtractor.extract_last_percentage_value(
-            reasoning, max_prediction=1, min_prediction=0
-        )
-        logger.info(
-            f"Forecasted URL {question.page_url} as {prediction} with reasoning:\n{reasoning}"
-        )
-        return ReasonedPrediction(
-            prediction_value=prediction, reasoning=reasoning
-        )
+            prediction: float = PredictionExtractor.extract_last_percentage_value(
+                reasoning, max_prediction=1, min_prediction=0
+            )
+            logger.info(
+                f"Forecasted URL {question.page_url} as {prediction} with reasoning summary:\n{reasoning[:300]}..."
+            )
+            return ReasonedPrediction(
+                prediction_value=prediction, reasoning=reasoning
+            )
+        except Exception as e:
+            logger.error(f"CRITICAL ERROR in _run_forecast_on_binary: {type(e).__name__}: {str(e)}")
+            logger.error(f"Error occurred with question ID: {question.question_id}, URL: {question.page_url}")
+            logger.error(f"Stack trace: ", exc_info=True)
+            # Include detailed context in the exception
+            detailed_exc = Exception(f"Error forecasting binary question {question.question_id}: {type(e).__name__}: {str(e)}")
+            detailed_exc.original_error = e
+            detailed_exc.question_url = question.page_url
+            detailed_exc.question_id = question.question_id
+            detailed_exc.research_length = len(research) if research else 0
+            raise detailed_exc
 
     async def _run_forecast_on_multiple_choice(
         self, question: MultipleChoiceQuestion, research: str

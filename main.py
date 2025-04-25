@@ -674,13 +674,37 @@ if __name__ == "__main__":
             template_bot.forecast_questions(questions, return_exceptions=True)
         )
     
-    # Custom handling for log_report_summary to prevent errors
+    # With this implementation:
     try:
+        # Try direct access first
+        for report in forecast_reports:
+            if hasattr(report, '_content') and isinstance(report._content, str):
+                # Fix case sensitivity issue by directly patching report content
+                # Replace any variation of "## Analysis" with "## Analysis\n\n... ## Forecast"
+                # This ensures the report content has a section with exactly "forecast" in it
+                if "## forecast" not in report._content.lower():
+                    if "## analysis" in report._content.lower() or "## reasoning" in report._content.lower():
+                        analysis_parts = re.split(r'(?i)##\s+(?:analysis|reasoning)', report._content, 1)
+                        if len(analysis_parts) > 1:
+                            # Keep everything before the Analysis section
+                            prefix = analysis_parts[0]
+                            # Get analysis content
+                            analysis_content = analysis_parts[1]
+                            
+                            # Find the probability or conclusion part
+                            if "probability:" in analysis_content.lower():
+                                parts = re.split(r'(?i)probability:', analysis_content, 1)
+                                analysis_part = parts[0]
+                                forecast_part = "Probability:" + parts[1]
+                                # Rebuild content with proper section headers
+                                report._content = f"{prefix}## Analysis\n\n{analysis_part}\n\n## Forecast\n\n{forecast_part}"
+        
+        # Now try to run the report summary
         TemplateForecaster.log_report_summary(forecast_reports)  # type: ignore
     except ValueError as e:
         logger.error(f"Error in log_report_summary: {e}")
-        # Print summary manually
-        logger.info("Forecast Report Summary:")
+        # Fall back to manual logging
+        logger.info("Forecast Report Summary (manual fallback):")
         for i, report in enumerate(forecast_reports):
             logger.info(f"Report {i+1}: {report.question_url}")
             if hasattr(report, 'prediction'):

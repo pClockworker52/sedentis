@@ -634,7 +634,7 @@ if __name__ == "__main__":
             ),
             "summarizer": GeneralLlm(
                 # Also configure the summarizer if needed
-                model="anthropic/claude-3-7-sonnet-20250219",
+                model="anthropic/claude-3-5-haiku-20241022",
                 temperature=0.3,
                 timeout=120,
                 allowed_tries=2,

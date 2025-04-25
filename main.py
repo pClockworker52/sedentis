@@ -2,6 +2,7 @@ import argparse
 import asyncio
 import logging
 import os
+import re
 from datetime import datetime
 from typing import Literal
 
@@ -72,12 +73,35 @@ class TemplateForecaster(ForecastBot):
     def _format_research_with_sections(self, research: str) -> str:
         """
         Ensure research output has the required section headers that forecast_report.py expects.
+        Case-insensitive check but case-sensitive addition of headers.
         """
-        # If research already has the forecast section, return as is
-        if "## Forecast" in research:
-            return research
+        # Check if any variation of "forecast" exists in a section header (case-insensitive)
+        if any(header.lower().find("forecast") != -1 for header in re.findall(r'##\s+[^\n]+', research)):
+            # Research already has a forecast section, but let's ensure it's properly formatted
+            # Extract existing content
+            sections = re.split(r'##\s+', research)
             
-        # Otherwise, add the section headers that forecast_report.py expects
+            # Rebuild with proper capitalization of section headers
+            formatted_research = ""
+            for i, section in enumerate(sections):
+                if i == 0:  # This is content before any ## header
+                    formatted_research += section
+                    continue
+                    
+                section_parts = section.split('\n', 1)
+                header = section_parts[0]
+                content = section_parts[1] if len(section_parts) > 1 else ""
+                
+                if "forecast" in header.lower():
+                    formatted_research += f"## Forecast\n{content}"
+                elif "research" in header.lower() or "analysis" in header.lower():
+                    formatted_research += f"## Research\n{content}"
+                else:
+                    formatted_research += f"## {header}\n{content}"
+            
+            return formatted_research
+            
+        # No forecast section found - add the section headers that forecast_report.py expects
         formatted_research = f"""## Research
 {research}
 
@@ -251,8 +275,8 @@ This section contains forecast information that will be processed in the next st
                 reasoning = await llm.invoke(prompt)
                 logger.info(f"Successfully received reasoning of length {len(reasoning)}")
                 
-                # Ensure forecast section exists
-                if "## Forecast" not in reasoning:
+                # Ensure forecast section exists (case-insensitive check)
+                if not any(header.lower().find("forecast") != -1 for header in re.findall(r'##\s+[^\n]+', reasoning)):
                     reasoning = self._format_forecast_with_sections(reasoning)
                 
             except Exception as llm_error:
@@ -282,9 +306,35 @@ This section contains forecast information that will be processed in the next st
     def _format_forecast_with_sections(self, reasoning: str) -> str:
         """
         Ensure forecast output has the required section headers that forecast_report.py expects.
+        Case-insensitive check but case-sensitive addition of headers.
         """
+        # Check if any variation of "forecast" exists in a section header (case-insensitive)
+        if any(header.lower().find("forecast") != -1 for header in re.findall(r'##\s+[^\n]+', reasoning)):
+            # Already has a forecast section, but let's ensure it's properly capitalized
+            sections = re.split(r'##\s+', reasoning)
+            
+            # Rebuild with proper capitalization of section headers
+            formatted_reasoning = ""
+            for i, section in enumerate(sections):
+                if i == 0:  # This is content before any ## header
+                    formatted_reasoning += section
+                    continue
+                    
+                section_parts = section.split('\n', 1)
+                header = section_parts[0]
+                content = section_parts[1] if len(section_parts) > 1 else ""
+                
+                if "forecast" in header.lower():
+                    formatted_reasoning += f"## Forecast\n{content}"
+                elif "analysis" in header.lower() or "reasoning" in header.lower():
+                    formatted_reasoning += f"## Analysis\n{content}"
+                else:
+                    formatted_reasoning += f"## {header}\n{content}"
+            
+            return formatted_reasoning
+        
         # Check if there's already some structure we can work with
-        if "## Analysis" in reasoning or "## Reasoning" in reasoning:
+        elif "## Analysis" in reasoning or "## Reasoning" in reasoning:
             # Extract the last paragraph which should contain the probability
             paragraphs = reasoning.split("\n\n")
             analysis = "\n\n".join(paragraphs[:-1])

@@ -66,7 +66,7 @@ class TemplateForecaster(ForecastBot):
             try:
                 research = ""
                 if os.getenv("OPENROUTER_API_KEY"):
-                    logger.info(f"Starting research for question: {question.question_id}")
+                    logger.info(f"Starting research for question: {question.id_of_post}")
                     research = await self._call_perplexity(
                         question.question_text, use_open_router=True
                     )
@@ -173,7 +173,7 @@ class TemplateForecaster(ForecastBot):
     ) -> ReasonedPrediction[float]:
         try:
             # Log detailed information about inputs
-            logger.info(f"Starting binary forecast for question {question.question_id}")
+            logger.info(f"Starting binary forecast for question {question.id_of_post}")
             logger.info(f"Research length: {len(research)}")
             logger.info(f"Research snippet: {research[:200]}...")
             prompt = clean_indents(

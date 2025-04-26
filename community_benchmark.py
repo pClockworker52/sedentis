@@ -6,6 +6,7 @@ import logging
 import sys
 from datetime import datetime, timedelta
 from typing import Literal
+import os
 
 import typeguard
 from forecasting_tools import (
@@ -58,32 +59,46 @@ async def benchmark_forecast_bot(mode: str) -> None:
 
     with MonetaryCostManager() as cost_manager:
         bots = [
-            TemplateForecaster(
-                predictions_per_research_report=5,
-                llms={
-                    "default": GeneralLlm(
-                        model="gpt-4o-mini",
-                        temperature=0.3,
-                    ),
-                },
-            ),
-            TemplateForecaster(
-                predictions_per_research_report=1,
-                llms={
-                    "default": GeneralLlm(
-                        model="gpt-4o-mini",
-                        temperature=0.3,
-                    ),
-                },
-            ),
-            # Add other ForecastBots here (or same bot with different parameters)
+                TemplateForecaster(
+                    predictions_per_research_report=1,
+                    llms={
+                        "default": GeneralLlm(
+                            model="anthropic/claude-3-7-sonnet-20250219",
+                            temperature=0.3,
+                            timeout=120,
+                            allowed_tries=2,
+                            api_key=os.getenv("ANTHROPIC_API_KEY")
+                        ),
+                        "summarizer": GeneralLlm(
+                            model="anthropic/claude-3-5-haiku-20241022",
+                            temperature=0.3,
+                            timeout=120,
+                            allowed_tries=2,
+                            api_key=os.getenv("ANTHROPIC_API_KEY")
+                        ),
+                        "researcher": GeneralLlm(
+                            model="openrouter/perplexity/sonar",
+                            temperature=0.1,
+                            timeout=120,
+                            allowed_tries=2,
+                            api_key=os.getenv("OPENROUTER_API_KEY")
+                        ),
+                        "llm": GeneralLlm(
+                            model="anthropic/claude-3-7-sonnet-20250219",
+                            temperature=0.3,
+                            timeout=120,
+                            allowed_tries=2,
+                            api_key=os.getenv("ANTHROPIC_API_KEY")
+                        ),
+                    },
+                )
         ]
         bots = typeguard.check_type(bots, list[ForecastBot])
         benchmarks = await Benchmarker(
             questions_to_use=questions,
             forecast_bots=bots,
-            file_path_to_save_reports="benchmarks/",
-            concurrent_question_batch_size=10,
+            file_path_to_save_reports=os.path.join(os.getcwd(), "benchmarks"),
+            concurrent_question_batch_size=1,
         ).run_benchmark()
         for i, benchmark in enumerate(benchmarks):
             logger.info(

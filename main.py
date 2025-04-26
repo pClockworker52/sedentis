@@ -622,7 +622,7 @@ if __name__ == "__main__":
         "quarterly_cup",
         "test_questions",
     ], "Invalid run mode"
-    my_anthropic_key = os.getenv("MY_PERSONAL_ANTHROPIC_KEY")
+    my_anthropic_key = os.getenv("METACULUS_TOKEN")
     
     template_bot = TemplateForecaster(
         research_reports_per_question=1,
@@ -634,7 +634,7 @@ if __name__ == "__main__":
         llms={
             "default": GeneralLlm(
                 # Use the direct Anthropic model name
-                model="anthropic/claude-3-7-sonnet-20250219",
+                model="claude-3-7-sonnet-20250219",
                 temperature=0.3,
                 timeout=120,
                 allowed_tries=2,
@@ -643,7 +643,7 @@ if __name__ == "__main__":
             ),
             "summarizer": GeneralLlm(
                 # Also configure the summarizer if needed
-                model="anthropic/claude-3-5-haiku-20241022",
+                model="claude-3-5-haiku-20241022",
                 temperature=0.3,
                 timeout=120,
                 allowed_tries=2,

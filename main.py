@@ -634,7 +634,7 @@ if __name__ == "__main__":
         llms={
             "default": GeneralLlm(
                 # Use the direct Anthropic model name
-                model="metaculus/anthropic/claude-3-7-sonnet-20250219",
+                model="metaculus/claude-3-7-sonnet-20250219",
                 temperature=0.3,
                 timeout=120,
                 allowed_tries=2,
@@ -643,7 +643,7 @@ if __name__ == "__main__":
             ),
             "summarizer": GeneralLlm(
                 # Also configure the summarizer if needed
-                model="metaculus/anthropic/claude-3-5-haiku-20241022",
+                model="metaculus/claude-3-5-haiku-20241022",
                 temperature=0.3,
                 timeout=120,
                 allowed_tries=2,

@@ -631,32 +631,11 @@ if __name__ == "__main__":
         publish_reports_to_metaculus=True,
         folder_to_save_reports_to=None,
         skip_previously_forecasted_questions=True,
-        llms={
-            "default": GeneralLlm(
-                model="claude-3-7-sonnet-20250219",  # Don't include metaculus/ prefix
-                temperature=0.3,
-                timeout=120,
-                allowed_tries=2,
-                api_base="https://llm-proxy.metaculus.com/proxy/anthropic/v1",  # Key part: use Metaculus proxy
-                api_key="ignore",  # Not used
-                default_headers={
-                    "Content-Type": "application/json",
-                    "Authorization": f"Token {os.getenv('METACULUS_TOKEN')}",
-                }
-            ),
-            "summarizer": GeneralLlm(
-                model="claude-3-5-haiku-20241022",  # Don't include metaculus/ prefix
-                temperature=0.3,
-                timeout=120,
-                allowed_tries=2,
-                api_base="https://llm-proxy.metaculus.com/proxy/anthropic/v1",  # Key part: use Metaculus proxy
-                api_key="ignore",  # Not used
-                default_headers={
-                    "Content-Type": "application/json",
-                    "Authorization": f"Token {os.getenv('METACULUS_TOKEN')}",
-                }
-            ),
-        },
+        # Remove your custom LLM configuration entirely to use the defaults
+        # llms={
+        #     "default": GeneralLlm(...),
+        #     "summarizer": GeneralLlm(...), 
+        # },
     )
 
     if run_mode == "tournament":

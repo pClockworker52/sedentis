@@ -634,20 +634,20 @@ if __name__ == "__main__":
         llms={
             "default": GeneralLlm(
                 # Use the direct Anthropic model name
-                model="claude-3-7-sonnet-20250219",
+                model="openrouter/antropic/claude-3-7-sonnet-20250219",
                 temperature=0.3,
                 timeout=120,
                 allowed_tries=2,
                 # Pass your API key directly here
-                api_key=my_anthropic_key
+                api_key=os.getenv("OPENROUTER_API_KEY")
             ),
             "summarizer": GeneralLlm(
                 # Also configure the summarizer if needed
-                model="claude-3-5-haiku-20241022",
+                model="openrouter/antropic/claude-3-5-haiku-20241022",
                 temperature=0.3,
                 timeout=120,
                 allowed_tries=2,
-                api_key=my_anthropic_key
+                api_key=os.getenv("OPENROUTER_API_KEY")
             ),
         },
     )

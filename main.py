@@ -639,7 +639,7 @@ if __name__ == "__main__":
                 timeout=120,
                 allowed_tries=2,
                 # Pass your API key directly here
-                api_key=os.getenv("OPENROUTER_API_KEY")
+                api_key=os.getenv("METACULUS_TOKEN")
             ),
             "summarizer": GeneralLlm(
                 # Also configure the summarizer if needed
@@ -647,7 +647,7 @@ if __name__ == "__main__":
                 temperature=0.3,
                 timeout=120,
                 allowed_tries=2,
-                api_key=os.getenv("OPENROUTER_API_KEY")
+                api_key=os.getenv("METACULUS_TOKEN")
             ),
         },
     )

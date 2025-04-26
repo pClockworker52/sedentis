@@ -622,8 +622,8 @@ if __name__ == "__main__":
         "quarterly_cup",
         "test_questions",
     ], "Invalid run mode"
-    my_anthropic_key = os.getenv("METACULUS_TOKEN")
-    
+
+        
     template_bot = TemplateForecaster(
         research_reports_per_question=1,
         predictions_per_research_report=1,
@@ -631,25 +631,11 @@ if __name__ == "__main__":
         publish_reports_to_metaculus=True,
         folder_to_save_reports_to=None,
         skip_previously_forecasted_questions=True,
-        llms={
-            "default": GeneralLlm(
-                # Use the direct Anthropic model name
-                model="openrouter/anthropic/claude-3-7-sonnet",
-                temperature=0.3,
-                timeout=120,
-                allowed_tries=2,
-                # Pass your API key directly here
-                api_key=os.getenv("METACULUS_TOKEN")
-            ),
-            "summarizer": GeneralLlm(
-                # Also configure the summarizer if needed
-                model="openrouter/anthropic/claude-3-5-haiku",
-                temperature=0.3,
-                timeout=120,
-                allowed_tries=2,
-                api_key=os.getenv("METACULUS_TOKEN")
-            ),
-        },
+        # Remove your custom LLM configuration entirely to use the defaults
+        # llms={
+        #     "default": GeneralLlm(...),
+        #     "summarizer": GeneralLlm(...), 
+        # },
     )
 
     if run_mode == "tournament":

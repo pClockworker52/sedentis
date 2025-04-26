@@ -265,7 +265,7 @@ This section contains forecast information that will be processed in the next st
                 1. First section titled "## Analysis" containing your detailed reasoning
                 2. Second section titled "## Forecast" containing your final probability assessment
                 
-                The last thing you write is your final probability as: "Probability: ZZ%", 0-100
+                The last thing you write is your final probability as: "Probability: ZZ%" where ZZ is a number between 0 and 100.
                 """
             )
             logger.info(f"About to call LLM with prompt length: {len(prompt)}")

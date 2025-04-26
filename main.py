@@ -379,10 +379,6 @@ The forecast is derived from the analysis above.
     async def _run_forecast_on_multiple_choice(
         self, question: MultipleChoiceQuestion, research: str
     ) -> ReasonedPrediction[PredictedOptionList]:
-        # Log what we're doing
-        logger.info(f"Starting multiple choice forecast for question {question.id_of_post}")
-        logger.info(f"Options for question: {question.options}")
-        
         prompt = clean_indents(
             f"""
             **Your Role:**
@@ -397,28 +393,28 @@ The forecast is derived from the analysis above.
             
             You need to forecast on this multiple-choice question:
             {question.question_text}
-    
+
             The options are: {question.options}
-    
-    
+
+
             Background:
             {question.background_info}
-    
+
             {question.resolution_criteria}
-    
+
             {question.fine_print}
-    
-    
+
+
             Your research assistant says:
             {research}
-    
+
             Today is {datetime.now().strftime("%Y-%m-%d")}.
-    
+
             Before answering you write:
             (a) The time left until the outcome to the question is known.
             (b) The status quo outcome if nothing changed.
             (c) A description of an scenario that results in an unexpected outcome.
-    
+
             **Forecasting Instructions:**
             
             1. **Interpret Each Option:** Analyze each option through the Sedentis lens. How would each option impact:
@@ -441,80 +437,29 @@ The forecast is derived from the analysis above.
             1. First section titled "## Analysis" containing your detailed reasoning
             2. Second section titled "## Forecast" containing your final probability assessment
             
-            The last thing you write is your final probabilities for the options in this exact order: {question.options}
+            The last thing you write is your final probabilities for the N options in this order {question.options} as:
+            Option_A: Probability_A
+            Option_B: Probability_B
+            ...
+            Option_N: Probability_N
             
             For each option, express the probability as a percentage between 0% and 100%. Make sure to include the % symbol.
-            The probabilities MUST be written in percentage format (0-100%) NOT decimal format (0-1). 
-            The sum of all percentages should equal 100%.
-            
-            Format your final probabilities exactly like this:
-            {question.options[0]}: XX%
-            {question.options[1]}: XX%
-            {', '.join([f"{option}: XX%" for option in question.options[2:]])}
+            The probabilities MUST be written in percentage format (0-100%) NOT decimal format (0-1).
             """
         )
+        reasoning = await self.get_llm("default", "llm").invoke(prompt)
         
-        logger.info(f"About to call LLM with prompt length: {len(prompt)}")
-        # Add sleep timer here before LLM call if needed
-        logger.info("Sleeping for 61 seconds to avoid rate limiting...")
-        await asyncio.sleep(61)
-        
-        # Make the actual API call
-        try:
-            reasoning = await self.get_llm("default", "llm").invoke(prompt)
-            logger.info(f"Successfully received reasoning of length {len(reasoning)}")
+        # Ensure forecast section exists
+        if "## Forecast" not in reasoning:
+            reasoning = self._format_forecast_with_sections(reasoning)
             
-            # Ensure forecast section exists
-            if "## Forecast" not in reasoning:
-                reasoning = self._format_forecast_with_sections(reasoning)
-                
-        except Exception as llm_error:
-            logger.error(f"Error during LLM invoke: {type(llm_error).__name__}: {str(llm_error)}")
-            raise Exception(f"LLM invoke failed: {type(llm_error).__name__}: {str(llm_error)}") from llm_error
-        
-        # Custom extraction logic to handle both formats
-        try:
-            logger.info(f"Reasoning snippet: {reasoning[-200:]}")  # Log the last part where probabilities should be
-            
-            # First try standard extraction
-            prediction = PredictionExtractor.extract_option_list_with_percentage_afterwards(
+        prediction: PredictedOptionList = (
+            PredictionExtractor.extract_option_list_with_percentage_afterwards(
                 reasoning, question.options
             )
-            
-            # Check if probabilities are in decimal format (sum ≈ 1.0)
-            values = list(prediction.options_to_values.values())
-            total_sum = sum(values)
-            logger.info(f"Initial extraction: {prediction.options_to_values}, sum: {total_sum}")
-            
-            if 0.9 <= total_sum <= 1.1 and all(0 <= v <= 1 for v in values):
-                # Convert to percentages
-                converted_values = {}
-                for option, value in prediction.options_to_values.items():
-                    converted_values[option] = value * 100
-                
-                # Create new prediction with percentage values
-                prediction = PredictedOptionList(options_to_values=converted_values)
-                logger.info(f"Converted decimal to percentage: {prediction.options_to_values}, sum: {sum(prediction.options_to_values.values())}")
-            
-            # Verify the sum is reasonable for percentages
-            total_sum = sum(prediction.options_to_values.values())
-            if not 99 <= total_sum <= 101:
-                logger.warning(f"Sum of probabilities is {total_sum}, which is not close to 100%. This may indicate a parsing error.")
-                
-                # If significantly off, try to normalize to 100%
-                if 0 < total_sum < 200:  # Some reasonable range that indicates valid but unnormalized percentages
-                    factor = 100 / total_sum
-                    normalized_values = {k: v * factor for k, v in prediction.options_to_values.items()}
-                    prediction = PredictedOptionList(options_to_values=normalized_values)
-                    logger.info(f"Normalized values to sum to 100%: {prediction.options_to_values}")
-            
-        except Exception as extract_error:
-            logger.error(f"Error extracting predictions: {type(extract_error).__name__}: {str(extract_error)}")
-            # If we can't extract properly, we'll need to raise an error
-            raise extract_error
-            
+        )
         logger.info(
-            f"Forecasted URL {question.page_url} as {prediction.options_to_values} with reasoning:\n{reasoning[-500:]}"
+            f"Forecasted URL {question.page_url} as {prediction} with reasoning:\n{reasoning}"
         )
         return ReasonedPrediction(
             prediction_value=prediction, reasoning=reasoning

@@ -54,6 +54,9 @@ class TemplateForecaster(ForecastBot):
                     logger.info(f"Research response type: {type(research)}")
                     logger.info(f"Research completed, length: {len(str(research))}")
                     
+                    # Print the FULL research response for debugging
+                    logger.info(f"FULL RESEARCH RESPONSE:\n{research}")
+                    
                     # Add sleep timer here to avoid rate limits
                     logger.info("Sleeping for 1 seconds to avoid rate limiting...")
                     await asyncio.sleep(1)
@@ -61,8 +64,8 @@ class TemplateForecaster(ForecastBot):
                     # Ensure research has the required sections
                     if isinstance(research, str):
                         research = self._ensure_research_sections(research)
+                        logger.info(f"RESEARCH AFTER SECTION FIXES:\n{research}")
                         
-                    logger.debug(f"FULL RESEARCH: {research}")
                 else:
                     logger.warning(
                         f"No research provider found when processing question URL {question.page_url}. Will pass back empty string."
@@ -82,9 +85,11 @@ class TemplateForecaster(ForecastBot):
         """
         Simplify to just ensure research has required sections.
         """
+        logger.info(f"BEFORE ensure_research_sections:\n{research[:500]}...")
+        
         if "## Summary" not in research and "## Research" not in research and "## Forecast" not in research:
             # No proper sections - create a basic structure
-            return f"""## Summary
+            research = f"""## Summary
 Summary of the research findings.
 
 ## Research
@@ -109,7 +114,8 @@ This section contains forecast information that will be processed in the next st
                 
         if "## Forecast" not in research:
             research += "\n\n## Forecast\nThis section contains forecast information that will be processed in the next step."
-            
+        
+        logger.info(f"AFTER ensure_research_sections:\n{research[:500]}...")
         return research
 
     async def _call_perplexity(
@@ -176,8 +182,10 @@ This section contains forecast information that will be processed in the next st
             )
             
             logger.info(f"About to call model.invoke with prompt length: {len(prompt)}")
+            logger.info(f"PROMPT SENT TO {model_name}:\n{prompt}")
             response = await model.invoke(prompt)
             logger.info(f"Received response with length: {len(str(response))}")
+            logger.info(f"RAW RESPONSE FROM {model_name}:\n{response}")
             
             return response
         except Exception as e:
@@ -259,6 +267,9 @@ This section contains forecast information that will be processed in the next st
                 The last line of your response must be exactly: "Probability: ZZ%" where ZZ is a number between 0 and 100.
                 """
             )
+            logger.info(f"About to call LLM with prompt length: {len(prompt)}")
+            logger.info(f"PROMPT SENT TO FORECAST MODEL:\n{prompt}")
+            
             # Add sleep timer here before LLM call
             logger.info("Sleeping for 61 seconds to avoid rate limiting...")
             await asyncio.sleep(61)
@@ -269,18 +280,20 @@ This section contains forecast information that will be processed in the next st
             # Make the actual API call
             reasoning = await llm.invoke(prompt)
             logger.info(f"Successfully received reasoning of length {len(reasoning)}")
+            logger.info(f"RAW FORECAST RESPONSE:\n{reasoning}")
             
             # Ensure response has the required sections
-            reasoning = self._ensure_forecast_sections(reasoning)
+            reasoning_with_sections = self._ensure_forecast_sections(reasoning)
+            logger.info(f"FORECAST RESPONSE AFTER SECTION FIXES:\n{reasoning_with_sections}")
             
             # Process the response
             prediction: float = PredictionExtractor.extract_last_percentage_value(
-                reasoning, max_prediction=1, min_prediction=0
+                reasoning_with_sections, max_prediction=1, min_prediction=0
             )
             logger.info(f"Extracted prediction {prediction} from reasoning")
             
             return ReasonedPrediction(
-                prediction_value=prediction, reasoning=reasoning
+                prediction_value=prediction, reasoning=reasoning_with_sections
             )
         except Exception as e:
             logger.error(f"CRITICAL ERROR in _run_forecast_on_binary: {type(e).__name__}: {str(e)}")
@@ -291,8 +304,11 @@ This section contains forecast information that will be processed in the next st
         """
         Simplified function to ensure forecast output has the required sections.
         """
+        logger.info(f"BEFORE ensure_forecast_sections:\n{reasoning[:500]}...")
+        
         # Check if we already have the required sections exactly as needed
         if "## Summary" in reasoning and "## Analysis" in reasoning and "## Forecast" in reasoning:
+            logger.info("All required sections already present, no changes needed")
             return reasoning
             
         # If missing sections, add them in a simple way
@@ -326,7 +342,8 @@ This section contains forecast information that will be processed in the next st
             
             forecast_content = "\n".join(prob_lines) if prob_lines else "Forecast based on the analysis."
             reasoning += f"\n\n## Forecast\n{forecast_content}"
-            
+        
+        logger.info(f"AFTER ensure_forecast_sections:\n{reasoning[:500]}...")
         return reasoning
 
     async def _run_forecast_on_multiple_choice(
@@ -401,21 +418,24 @@ This section contains forecast information that will be processed in the next st
             The probabilities MUST be written in percentage format (0-100%) NOT decimal format (0-1).
             """
         )
+        logger.info(f"PROMPT FOR MULTIPLE CHOICE QUESTION:\n{prompt}")
         reasoning = await self.get_llm("default", "llm").invoke(prompt)
+        logger.info(f"RAW MULTIPLE CHOICE RESPONSE:\n{reasoning}")
          
         # Ensure response has the required sections
-        reasoning = self._ensure_forecast_sections(reasoning)
+        reasoning_with_sections = self._ensure_forecast_sections(reasoning)
+        logger.info(f"MULTIPLE CHOICE RESPONSE AFTER SECTION FIXES:\n{reasoning_with_sections}")
    
         prediction: PredictedOptionList = (
             PredictionExtractor.extract_option_list_with_percentage_afterwards(
-                reasoning, question.options
+                reasoning_with_sections, question.options
             )
         )
         logger.info(
-            f"Forecasted URL {question.page_url} as {prediction} with reasoning:\n{reasoning}"
+            f"Forecasted URL {question.page_url} as {prediction} with reasoning:\n{reasoning_with_sections}"
         )
         return ReasonedPrediction(
-            prediction_value=prediction, reasoning=reasoning
+            prediction_value=prediction, reasoning=reasoning_with_sections
         )
 
     async def _run_forecast_on_numeric(
@@ -515,21 +535,24 @@ This section contains forecast information that will be processed in the next st
             - And so on, with each percentile value higher than the previous one
             """
         )
+        logger.info(f"PROMPT FOR NUMERIC QUESTION:\n{prompt}")
         reasoning = await self.get_llm("default", "llm").invoke(prompt)
+        logger.info(f"RAW NUMERIC QUESTION RESPONSE:\n{reasoning}")
         
         # Ensure response has the required sections
-        reasoning = self._ensure_forecast_sections(reasoning)
+        reasoning_with_sections = self._ensure_forecast_sections(reasoning)
+        logger.info(f"NUMERIC RESPONSE AFTER SECTION FIXES:\n{reasoning_with_sections}")
     
         prediction: NumericDistribution = (
             PredictionExtractor.extract_numeric_distribution_from_list_of_percentile_number_and_probability(
-                reasoning, question
+                reasoning_with_sections, question
             )
         )
         logger.info(
-            f"Forecasted URL {question.page_url} as {prediction.declared_percentiles} with reasoning:\n{reasoning}"
+            f"Forecasted URL {question.page_url} as {prediction.declared_percentiles} with reasoning:\n{reasoning_with_sections}"
         )
         return ReasonedPrediction(
-            prediction_value=prediction, reasoning=reasoning
+            prediction_value=prediction, reasoning=reasoning_with_sections
         )
 
     def _create_upper_and_lower_bound_messages(
@@ -557,6 +580,7 @@ This section contains forecast information that will be processed in the next st
         try:
             # Get the current explanation
             explanation = report.explanation
+            logger.info(f"ORIGINAL REPORT EXPLANATION:\n{explanation}")
             
             # Check if we have all required sections with exact headers
             has_summary = "## Summary" in explanation
@@ -624,6 +648,7 @@ This section contains forecast information that will be processed in the next st
                 # Update the report
                 report.explanation = fixed_explanation
                 logger.info(f"Fixed report sections for {report.question.page_url}")
+                logger.info(f"FIXED REPORT EXPLANATION:\n{fixed_explanation}")
             
             return report
             
@@ -638,6 +663,18 @@ if __name__ == "__main__":
         level=logging.INFO,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
+
+    # Configure file handler for detailed logging
+    file_handler = logging.FileHandler('forecasting_debug.log')
+    file_handler.setLevel(logging.DEBUG)
+    file_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+    
+    # Add file handler to root logger
+    logging.getLogger('').addHandler(file_handler)
+    
+    # Increase log level for specific modules to debug
+    logging.getLogger('forecasting_tools').setLevel(logging.DEBUG)
+    logging.getLogger('__main__').setLevel(logging.DEBUG)
 
     # LiteLLM logging
     litellm_logger = logging.getLogger("LiteLLM")

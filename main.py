@@ -237,15 +237,10 @@ This section contains forecast information that will be processed in the next st
                 
                 **CRITICAL FORMAT REQUIREMENTS:**
                 Your response MUST begin with:
-                
-                # summary
-                
+                ## summary
                 Then continue with:
-                
                 ## research
-                
                 And then include:
-                
                 ## forecast
                 
                 Before answering in this format, consider:

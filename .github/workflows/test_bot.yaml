@@ -36,6 +36,7 @@ jobs:
         run: poetry install --no-interaction --no-root
       - name: Run bot
         run: |
+          # Ensure the script outputs detailed logs
           poetry run python main.py --mode test_questions
         # this reads the environment variables from the github repository.
         # Store under Settings --> Secrets and variables --> Actions
@@ -50,12 +51,23 @@ jobs:
           #ASKNEWS_CLIENT_ID: ${{ secrets.ASKNEWS_CLIENT_ID }}
           #ASKNEWS_SECRET: ${{ secrets.ASKNEWS_SECRET }}
       
-      # This new step will save the log files as artifacts
+      # Save logs explicitly
+      - name: Save logs
+        if: always()  # Run even if previous steps fail
+        run: |
+          # Ensure logs directory exists
+          mkdir -p logs
+          # Store logs with timestamp
+          cp forecasting_debug.log logs/forecasting_debug.log || echo "No log file found"
+          # List all files in the current directory for debugging
+          ls -la
+          # Also save the console output
+          cat *.log > logs/console_output.log || echo "No log files found"
+      
+      # Upload logs using v2 of the action
       - name: Upload logs
-        uses: actions/upload-artifact@v3
-        if: always()  # This runs even if previous steps fail
+        uses: actions/upload-artifact@v2
+        if: always()  # This ensures logs are uploaded even if the job fails
         with:
           name: forecast-logs
-          path: |
-            forecasting_debug.log
-            *.log
+          path: logs/

@@ -630,15 +630,15 @@ if __name__ == "__main__":
         publish_reports_to_metaculus=True,
         folder_to_save_reports_to=None,
         skip_previously_forecasted_questions=True,
-        llms={
-            "default": GeneralLlm(
-                model="metaculus/anthropic/claude-3-5-haiku-20241022",
-                temperature=0.3,
-                timeout=120,
-                allowed_tries=2,
-            ),
-            "summarizer": "metaculus/anthropic/claude-3-5-haiku-20241022"
-        },
+        # llms={
+        #     "default": GeneralLlm(
+        #         model="metaculus/anthropic/claude-3-5-haiku-20241022",
+        #         temperature=0.3,
+        #         timeout=120,
+        #         allowed_tries=2,
+        #     ),
+        #     "summarizer": "metaculus/anthropic/claude-3-5-haiku-20241022"
+        # },
     )
 
     if run_mode == "tournament":

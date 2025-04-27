@@ -274,8 +274,8 @@ This section contains forecast information that will be processed in the next st
             )
             logger.info(f"About to call LLM with prompt length: {len(prompt)}")
             # Add sleep timer here before LLM call
-            logger.info("Sleeping for 1 seconds to avoid rate limiting...")
-            await asyncio.sleep(1)
+            logger.info("Sleeping for 61 seconds to avoid rate limiting...")
+            await asyncio.sleep(61)
             # Check if self.get_llm is working as expected
             llm = self.get_llm("default", "llm")
             logger.info(f"Retrieved LLM: {type(llm).__name__}")

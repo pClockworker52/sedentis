@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 
 METACULUS_TOKEN = os.getenv("METACULUS_TOKEN")
 MY_PERSONAL_ANTHROPIC_KEY = os.getenv("MY_PERSONAL_ANTHROPIC_KEY")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
 
 class TemplateForecaster(ForecastBot):
@@ -45,7 +46,7 @@ class TemplateForecaster(ForecastBot):
         async with self._concurrency_limiter:
             try:
                 research = ""
-                if os.getenv("OPENROUTER_API_KEY"):
+                if OPENROUTER_API_KEY:
                     logger.info(f"Starting research for question: {question.id_of_post}")
                     research = await self._call_perplexity(
                         question.question_text, use_open_router=True
@@ -636,14 +637,34 @@ if __name__ == "__main__":
         publish_reports_to_metaculus=True,
         folder_to_save_reports_to=None,
         skip_previously_forecasted_questions=True,
+        
         llms={
             "default": GeneralLlm(
-                model="openrouter/anthropic/claude-3-5-haiku-20241022",
+                model="claude-3-5-haiku-20241022", 
                 temperature=0.3,
                 timeout=120,
                 allowed_tries=2,
+                api_base="https://llm-proxy.metaculus.com/proxy/anthropic/v1",
+                api_key="placeholder_key",  # Don't use METACULUS_TOKEN here
+                api_type="anthropic",
+                headers={
+                    "Authorization": f"Token {METACULUS_TOKEN}",  # This is the correct way to authenticate
+                    "Content-Type": "application/json"
+                }
+            ),
+            # The summarizer should have the same configuration
+            "summarizer": GeneralLlm(
+                model="claude-3-5-haiku-20241022",
+                temperature=0.3,
+                api_base="https://llm-proxy.metaculus.com/proxy/anthropic/v1",
+                api_key="placeholder_key",
+                api_type="anthropic",
+                headers={
+                    "Authorization": f"Token {METACULUS_TOKEN}",
+                    "Content-Type": "application/json"
+                }
             )
-        },
+        }
     )
 
     if run_mode == "tournament":

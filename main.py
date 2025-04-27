@@ -83,84 +83,166 @@ class TemplateForecaster(ForecastBot):
         Ensure research output has the required section headers that forecast_report.py expects.
         This is a robust implementation that guarantees proper section headers.
         """
-        # First check if we have the required sections already
-        has_research_section = False
-        has_forecast_section = False
         
-        # Check for existing sections (case-insensitive)
-        for header in re.findall(r'##\s+[^\n]+', research):
-            if re.search(r'##\s+research', header, re.IGNORECASE):
-                has_research_section = True
-            elif re.search(r'##\s+forecast', header, re.IGNORECASE):
-                has_forecast_section = True
+        logger = logging.getLogger(__name__)
         
-        # If sections exist but might not be in the right format, standardize them
-        if has_research_section or has_forecast_section:
-            # Split by markdown headers
+        # Check if research starts with a summary or title
+        first_lines = research.strip().split('\n', 3)[:3]
+        first_lines_text = '\n'.join(first_lines)
+        
+        # Track if we have the exact required headers
+        has_summary_section = "## Summary" in research
+        has_research_section = "## Research" in research
+        has_forecast_section = "## Forecast" in research
+        
+        # Log what we found
+        logger.info(f"Initial research format check - Summary: {has_summary_section}, Research: {has_research_section}, Forecast: {has_forecast_section}")
+        
+        # If we already have ALL the exact headers, we're good
+        if has_summary_section and has_research_section and has_forecast_section:
+            logger.info("Research already has all required exact headers")
+            return research
+        
+        # Check for variant headers (case-insensitive)
+        headers = re.findall(r'##\s+([^\n]+)', research, re.IGNORECASE)
+        logger.info(f"Found headers in research: {headers}")
+        
+        # If research already has headers, standardize them
+        if headers:
+            # Split by headers and reconstruct with standardized headers
             sections = re.split(r'(##\s+[^\n]+)', research)
             formatted_research = ""
             
-            # Rebuild with standardized headers
+            # Process each section
             i = 0
             while i < len(sections):
-                if i == 0 and not sections[i].startswith('##'):
-                    # Content before any header - keep it
+                if i == 0 and not sections[i].strip().startswith('##'):
+                    # Content before any header - could be a title/intro
                     formatted_research += sections[i]
                     i += 1
                     continue
-                
-                if i < len(sections) and sections[i].startswith('##'):
-                    header = sections[i]
+                    
+                if i < len(sections) and sections[i].strip().startswith('##'):
+                    header = sections[i].strip()
                     content = sections[i+1] if i+1 < len(sections) else ""
                     
-                    # Standardize header names
-                    if re.search(r'research|analysis', header, re.IGNORECASE):
+                    # Standardize headers based on keywords
+                    header_text = header.lower()
+                    if any(word in header_text for word in ["summary", "overview", "introduction"]):
+                        formatted_research += "## Summary\n" + content
+                        has_summary_section = True
+                    elif any(word in header_text for word in ["research", "analysis", "background", "details"]):
                         formatted_research += "## Research\n" + content
                         has_research_section = True
-                    elif re.search(r'forecast|prediction', header, re.IGNORECASE):
+                    elif any(word in header_text for word in ["forecast", "prediction", "conclusion", "result"]):
                         formatted_research += "## Forecast\n" + content
                         has_forecast_section = True
                     else:
+                        # Keep original header if we can't categorize it
                         formatted_research += header + content
                     
-                    i += 2  # Skip the header and content we just processed
+                    i += 2  # Skip header and content
                 else:
-                    # Something went wrong with the splitting - just append
+                    # Something went wrong with splitting, just append
                     formatted_research += sections[i]
                     i += 1
         else:
-            # No sections found - create them from scratch
-            formatted_research = f"## Research\n{research.strip()}\n\n## Forecast\nThis section contains forecast information that will be processed in the next step."
-            has_research_section = True
-            has_forecast_section = True
+            # No headers at all - need to create structure from scratch
+            if len(research.strip()) < 500:
+                # Short content - simple structure
+                formatted_research = f"## Research\n{research.strip()}\n\n## Forecast\nThis section contains forecast information."
+            else:
+                # Longer content - try to split intelligently
+                lines = research.strip().split('\n')
+                
+                # Check if it starts with a title (short first line)
+                title_section = ""
+                if len(lines) > 0 and len(lines[0]) < 100 and not lines[0].startswith('#'):
+                    title_section = lines[0] + "\n\n"
+                    lines = lines[1:]
+                
+                # Split remaining content
+                total_lines = len(lines)
+                research_end = int(total_lines * 0.8)  # 80% research, 20% forecast
+                
+                research_content = '\n'.join(lines[:research_end])
+                forecast_content = '\n'.join(lines[research_end:])
+                
+                formatted_research = f"{title_section}## Research\n{research_content}\n\n## Forecast\n{forecast_content}"
+                
+                has_research_section = True
+                has_forecast_section = True
         
-        # Final check - ensure both required sections exist
+        # Ensure ALL required sections exist with EXACT header format
+        if not has_summary_section:
+            # Try to extract a summary from the beginning if possible
+            lines = formatted_research.strip().split('\n')
+            if len(lines) > 5:
+                summary_content = '\n'.join(lines[:3])
+                rest_content = '\n'.join(lines[3:])
+                formatted_research = f"## Summary\n{summary_content}\n\n{rest_content}"
+            else:
+                # Just add a minimal summary section at the beginning
+                formatted_research = f"## Summary\nSummary of research and forecast.\n\n{formatted_research}"
+        
         if not has_research_section:
-            # Add research section at the beginning
-            formatted_research = f"## Research\n{formatted_research}"
+            # Add research section after summary
+            if "## Summary" in formatted_research:
+                parts = formatted_research.split("## Summary", 1)
+                summary_part = parts[0] + "## Summary" + parts[1].split("##", 1)[0]
+                rest_part = "##" + parts[1].split("##", 1)[1] if "##" in parts[1] else ""
+                formatted_research = f"{summary_part}\n\n## Research\nDetailed research supporting the forecast.\n\n{rest_part}"
+            else:
+                # Add at beginning
+                formatted_research = f"## Research\n{formatted_research}"
         
         if not has_forecast_section:
             # Add forecast section at the end
-            formatted_research += "\n\n## Forecast\nThis section contains forecast information that will be processed in the next step."
+            formatted_research += "\n\n## Forecast\nThis section contains forecast information based on the research."
         
-        # Final verification - check that the exact section headers exist
+        # Final verification - confirm exact headers exist
+        if "## Summary" not in formatted_research:
+            logger.warning("Summary section still missing after formatting - adding emergency section")
+            formatted_research = "## Summary\nSummary of research and forecast.\n\n" + formatted_research
+        
         if "## Research" not in formatted_research:
-            # Replace any variant with the exact format
-            for match in re.findall(r'##\s+research', formatted_research, re.IGNORECASE):
-                formatted_research = formatted_research.replace(match, "## Research")
+            logger.warning("Research section still missing after formatting - adding emergency section")
+            # Add after summary
+            if "## Summary" in formatted_research:
+                parts = formatted_research.split("## Summary", 1)
+                summary_content = parts[1].split("##", 1)[0] if "##" in parts[1] else parts[1]
+                rest_content = "##" + parts[1].split("##", 1)[1] if "##" in parts[1] else ""
+                formatted_research = f"## Summary{summary_content}\n## Research\nDetailed research supporting the forecast.\n\n{rest_content}"
+            else:
+                formatted_research = "## Research\nDetailed research supporting the forecast.\n\n" + formatted_research
         
         if "## Forecast" not in formatted_research:
-            # Replace any variant with the exact format
-            for match in re.findall(r'##\s+forecast', formatted_research, re.IGNORECASE):
-                formatted_research = formatted_research.replace(match, "## Forecast")
-            
-        # Absolutely ensure sections exist with correct format
-        if "## Research" not in formatted_research:
-            formatted_research = f"## Research\n{formatted_research}"
+            logger.warning("Forecast section still missing after formatting - adding emergency section")
+            formatted_research += "\n\n## Forecast\nForecast based on the research."
         
-        if "## Forecast" not in formatted_research:
-            formatted_research += "\n\n## Forecast\nThis section contains forecast information that will be processed in the next step."
+        # Ensure sections are in correct order (if all three exist)
+        if "## Summary" in formatted_research and "## Research" in formatted_research and "## Forecast" in formatted_research:
+            summary_match = re.search(r'## Summary(.*?)(?=##|$)', formatted_research, re.DOTALL)
+            research_match = re.search(r'## Research(.*?)(?=##|$)', formatted_research, re.DOTALL)
+            forecast_match = re.search(r'## Forecast(.*?)(?=##|$)', formatted_research, re.DOTALL)
             
+            if summary_match and research_match and forecast_match:
+                summary_content = summary_match.group(1).strip()
+                research_content = research_match.group(1).strip()
+                forecast_content = forecast_match.group(1).strip()
+                
+                # Rebuild in correct order
+                formatted_research = f"""## Summary
+    {summary_content}
+    
+    ## Research
+    {research_content}
+    
+    ## Forecast
+    {forecast_content}
+    """
+        
+        logger.info(f"After formatting - sections present: Summary={'## Summary' in formatted_research}, Research={'## Research' in formatted_research}, Forecast={'## Forecast' in formatted_research}")
         return formatted_research
 
     async def _call_perplexity(
@@ -362,172 +444,141 @@ class TemplateForecaster(ForecastBot):
     
     def _format_forecast_with_sections(self, reasoning: str) -> str:
         """
-        Completely rewritten function to ensure forecast output has the required section headers
-        in exactly the format expected by forecast_report.py
+        Ensures forecast output has the required section headers in exactly the format
+        expected by forecast_report.py, with an emphasis on the exact header format.
         """
-        # Check if we already have the required sections
-        has_summary_section = False
-        has_analysis_section = False
-        has_forecast_section = False
+        import re
+        import logging
         
-        for header in re.findall(r'##\s+[^\n]+', reasoning):
-            if re.search(r'##\s+summary', header, re.IGNORECASE):
-                has_summary_section = True
-            elif re.search(r'##\s+analysis|##\s+research|##\s+reasoning', header, re.IGNORECASE):
-                has_analysis_section = True
-            elif re.search(r'##\s+forecast|##\s+prediction', header, re.IGNORECASE):
-                has_forecast_section = True
+        logger = logging.getLogger(__name__)
         
-        # If we have at least one proper section, try to reformat the document
-        if has_summary_section or has_analysis_section or has_forecast_section:
-            # Split by section headers
-            sections = re.split(r'(##\s+[^\n]+)', reasoning)
-            formatted_reasoning = ""
-            
-            # Track which sections we've processed
-            processed_summary = False
-            processed_analysis = False
-            processed_forecast = False
-            
-            i = 0
-            while i < len(sections):
-                if i == 0 and not sections[i].startswith('##'):
-                    # Content before any header - keep it
-                    # If this is substantial content and we don't have a summary yet,
-                    # treat it as a summary
-                    if len(sections[i].strip()) > 50 and not has_summary_section:
-                        formatted_reasoning += "## Summary\n" + sections[i]
-                        processed_summary = True
-                    else:
-                        formatted_reasoning += sections[i]
-                    i += 1
-                    continue
-                
-                if i < len(sections) and sections[i].startswith('##'):
-                    header = sections[i]
-                    content = sections[i+1] if i+1 < len(sections) else ""
-                    
-                    # Standardize section headers
-                    if re.search(r'summary', header, re.IGNORECASE):
-                        formatted_reasoning += "## Summary\n" + content
-                        processed_summary = True
-                    elif re.search(r'analysis|research|reasoning', header, re.IGNORECASE) and not processed_analysis:
-                        formatted_reasoning += "## Analysis\n" + content
-                        processed_analysis = True
-                    elif re.search(r'forecast|prediction', header, re.IGNORECASE):
-                        formatted_reasoning += "## Forecast\n" + content
-                        processed_forecast = True
-                    else:
-                        # Other headers - keep them unchanged
-                        formatted_reasoning += header + content
-                    
-                    i += 2  # Skip the header and content
-                else:
-                    # Something unexpected - just append
-                    formatted_reasoning += sections[i]
-                    i += 1
-            
-            # Now make sure all required sections exist
-            if not processed_summary:
-                formatted_reasoning = "## Summary\nThis is a summary of the forecasting analysis.\n\n" + formatted_reasoning
-            
-            if not processed_analysis:
-                # Add after summary if it exists
-                if "## Summary" in formatted_reasoning:
-                    parts = formatted_reasoning.split("## Summary", 1)
-                    summary_content = parts[1].split("##", 1)[0] if "##" in parts[1] else parts[1]
-                    remaining = parts[1].split("##", 1)[1] if "##" in parts[1] else ""
-                    formatted_reasoning = "## Summary" + summary_content + "\n## Analysis\nThis section contains analysis for the forecast.\n\n##" + remaining
-                else:
-                    formatted_reasoning = "## Analysis\nThis section contains analysis for the forecast.\n\n" + formatted_reasoning
-            
-            if not processed_forecast:
-                formatted_reasoning += "\n\n## Forecast\nBased on the analysis, the forecast is provided here."
+        # First, check if the exact section headers exist as required
+        has_exact_summary = "## Summary" in reasoning
+        has_exact_analysis = "## Analysis" in reasoning
+        has_exact_forecast = "## Forecast" in reasoning
+        
+        # If all exact headers exist, we might be good - let's double check the content
+        if has_exact_summary and has_exact_analysis and has_exact_forecast:
+            logger.info("All exact section headers found! Verifying content...")
+            # Continue with processing to ensure the content is valid
         else:
-            # No proper sections found - create from scratch with all required sections
-            # Try to extract probability statement if it exists
-            probability_line = ""
-            for line in reasoning.split('\n'):
-                if "probability:" in line.lower():
-                    probability_line = line
+            logger.warning(f"Missing exact section headers - found: Summary={has_exact_summary}, Analysis={has_exact_analysis}, Forecast={has_exact_forecast}")
+        
+        # Split by headers to isolate content
+        sections = {}
+        
+        # Extract content for each section if it exists
+        if has_exact_summary:
+            summary_match = re.search(r'## Summary\s*(.*?)(?=##|$)', reasoning, re.DOTALL)
+            if summary_match:
+                sections['summary'] = summary_match.group(1).strip()
+        
+        if has_exact_analysis:
+            analysis_match = re.search(r'## Analysis\s*(.*?)(?=##|$)', reasoning, re.DOTALL)
+            if analysis_match:
+                sections['analysis'] = analysis_match.group(1).strip()
+        
+        if has_exact_forecast:
+            forecast_match = re.search(r'## Forecast\s*(.*?)(?=##|$)', reasoning, re.DOTALL)
+            if forecast_match:
+                sections['forecast'] = forecast_match.group(1).strip()
+        
+        # Check for any variant headers we might want to standardize
+        if 'summary' not in sections:
+            for header_variant in ['summary', 'overview', 'introduction']:
+                pattern = rf'##\s+{header_variant}\s*(.*?)(?=##|$)'
+                match = re.search(pattern, reasoning, re.DOTALL | re.IGNORECASE)
+                if match:
+                    sections['summary'] = match.group(1).strip()
                     break
+        
+        if 'analysis' not in sections:
+            for header_variant in ['analysis', 'research', 'reasoning', 'details']:
+                pattern = rf'##\s+{header_variant}\s*(.*?)(?=##|$)'
+                match = re.search(pattern, reasoning, re.DOTALL | re.IGNORECASE)
+                if match:
+                    sections['analysis'] = match.group(1).strip()
+                    break
+        
+        if 'forecast' not in sections:
+            for header_variant in ['forecast', 'prediction', 'conclusion', 'result']:
+                pattern = rf'##\s+{header_variant}\s*(.*?)(?=##|$)'
+                match = re.search(pattern, reasoning, re.DOTALL | re.IGNORECASE)
+                if match:
+                    sections['forecast'] = match.group(1).strip()
+                    break
+        
+        # If we still don't have all sections, extract content based on position
+        full_text = reasoning.strip()
+        
+        if 'summary' not in sections:
+            # First ~20% of content if no summary found
+            summary_length = min(len(full_text.split('\n')) // 5, 10)
+            sections['summary'] = '\n'.join(full_text.split('\n')[:summary_length])
+        
+        if 'forecast' not in sections:
+            # Look for percentage/probability statements at the end
+            lines = full_text.split('\n')
+            # Try to find probability statements in last 10 lines
+            probability_lines = []
+            for line in lines[-10:]:
+                if re.search(r'probability|percentile|\d+%', line, re.IGNORECASE):
+                    probability_lines.append(line)
             
-            # Split content into logical sections
-            lines = reasoning.strip().split('\n')
-            line_count = len(lines)
-            
-            if line_count <= 3:
-                # Very short content - minimal structure
-                formatted_reasoning = f"""## Summary
-A brief summary of the forecast.
-
-## Analysis
-{reasoning.strip()}
-
-## Forecast
-{probability_line if probability_line else "The forecast is derived from the analysis above."}
-"""
+            if probability_lines:
+                sections['forecast'] = '\n'.join(probability_lines)
             else:
-                # Longer content - try to divide it meaningfully
-                summary_end = min(int(line_count * 0.2), 5)  # First 20% or 5 lines for summary
-                analysis_end = int(line_count * 0.8)  # 80% for analysis
-                
-                summary_content = '\n'.join(lines[:summary_end])
-                analysis_content = '\n'.join(lines[summary_end:analysis_end])
-                forecast_content = '\n'.join(lines[analysis_end:])
-                
-                # Add probability line to forecast if not already there
-                if probability_line and probability_line not in forecast_content:
-                    forecast_content += f"\n\n{probability_line}"
-                
-                formatted_reasoning = f"""## Summary
-{summary_content if summary_content.strip() else "A brief summary of the forecast."}
-
-## Analysis
-{analysis_content if analysis_content.strip() else reasoning.strip()}
-
-## Forecast
-{forecast_content if forecast_content.strip() else "The forecast is derived from the analysis above."}
-"""
+                # Last ~20% of content if no forecast section found
+                forecast_length = min(len(lines) // 5, 10)
+                sections['forecast'] = '\n'.join(lines[-forecast_length:])
         
-        # Final verification - ensure all required sections exist with EXACT formatting
-        required_sections = ["## Summary", "## Analysis", "## Forecast"]
-        for section in required_sections:
-            if section not in formatted_reasoning:
-                # Section missing with exact format - add it
-                if section == "## Summary":
-                    formatted_reasoning = f"{section}\nSummary of the forecast.\n\n{formatted_reasoning}"
-                elif section == "## Analysis":
-                    # Add after summary
-                    if "## Summary" in formatted_reasoning:
-                        parts = formatted_reasoning.split("## Summary", 1)
-                        summary_part = "## Summary" + parts[1].split("##", 1)[0]
-                        rest_part = "##" + parts[1].split("##", 1)[1] if "##" in parts[1] else ""
-                        formatted_reasoning = f"{summary_part}\n\n{section}\nAnalysis for the forecast.\n\n{rest_part}"
-                    else:
-                        formatted_reasoning = f"{section}\nAnalysis for the forecast.\n\n{formatted_reasoning}"
-                elif section == "## Forecast":
-                    formatted_reasoning += f"\n\n{section}\nThe forecast based on the analysis."
+        if 'analysis' not in sections:
+            # Whatever is left in the middle
+            if 'summary' in sections and 'forecast' in sections:
+                # Extract all content not in summary or forecast
+                all_content = full_text
+                summary_content = sections['summary']
+                forecast_content = sections['forecast']
+                
+                # Remove summary and forecast content to isolate analysis
+                analysis_content = all_content
+                if summary_content in analysis_content:
+                    analysis_content = analysis_content.replace(summary_content, '', 1)
+                if forecast_content in analysis_content:
+                    analysis_content = analysis_content.replace(forecast_content, '', 1)
+                
+                # Clean up any remaining section headers
+                analysis_content = re.sub(r'##\s+\w+\s*', '', analysis_content)
+                sections['analysis'] = analysis_content.strip()
+            else:
+                # Middle 60% if summary or forecast is missing
+                lines = full_text.split('\n')
+                summary_length = len(lines) // 5
+                forecast_length = len(lines) // 5
+                analysis_start = summary_length
+                analysis_end = len(lines) - forecast_length
+                sections['analysis'] = '\n'.join(lines[analysis_start:analysis_end])
         
-        # Ensure the sections appear in the correct order
-        # This is a last resort if the above logic failed to order them correctly
-        if "## Summary" in formatted_reasoning and "## Analysis" in formatted_reasoning and "## Forecast" in formatted_reasoning:
-            summary_content = re.search(r'## Summary(.*?)(?=##|$)', formatted_reasoning, re.DOTALL).group(1).strip()
-            analysis_content = re.search(r'## Analysis(.*?)(?=##|$)', formatted_reasoning, re.DOTALL).group(1).strip()
-            forecast_content = re.search(r'## Forecast(.*?)(?=##|$)', formatted_reasoning, re.DOTALL).group(1).strip()
-            
-            formatted_reasoning = f"""## Summary
-{summary_content}
-
-## Analysis
-{analysis_content}
-
-## Forecast
-{forecast_content}
-"""
+        # Now rebuild the document with proper section headers
+        formatted_reasoning = f"""## Summary
+    {sections.get('summary', 'Summary of the forecast analysis.')}
+    
+    ## Analysis
+    {sections.get('analysis', 'Detailed analysis supporting the forecast.')}
+    
+    ## Forecast
+    {sections.get('forecast', 'Final forecast probabilities based on analysis.')}
+    """
         
-        # Log the final formatted result
-        logger.info(f"Final formatted reasoning has sections: {'## Summary' in formatted_reasoning}, {'## Analysis' in formatted_reasoning}, {'## Forecast' in formatted_reasoning}")
+        # Verify we have the necessary sections and they contain content
+        if "## Forecast" not in formatted_reasoning:
+            logger.error("Critical error: Forecast section header is still missing!")
+            # Add an emergency basic forecast section
+            formatted_reasoning += "\n\n## Forecast\nThe forecast is based on the analysis above."
+        
+        # Add some diagnostic logging
+        logger.info(f"Final formatted sections: Summary={len(sections.get('summary', ''))}, Analysis={len(sections.get('analysis', ''))}, Forecast={len(sections.get('forecast', ''))}")
+        logger.info(f"Section headers in final output: {'## Summary' in formatted_reasoning}, {'## Analysis' in formatted_reasoning}, {'## Forecast' in formatted_reasoning}")
         
         return formatted_reasoning
 

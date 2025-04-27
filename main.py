@@ -631,15 +631,7 @@ if __name__ == "__main__":
         publish_reports_to_metaculus=True,
         folder_to_save_reports_to=None,
         skip_previously_forecasted_questions=True,
-        llms={
-            "default": GeneralLlm(
-                model="metaculus/anthropic/claude-3-7-sonnet-latest",
-                temperature=0.3,
-                timeout=120,
-                allowed_tries=2,
-            ),
-            "summarizer": "metaculus/anthropic/claude-3-7-sonnet-latest"
-        },
+        # Remove all custom LLM configuration - let system use defaults
     )
 
     if run_mode == "tournament":

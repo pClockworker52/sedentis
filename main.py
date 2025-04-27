@@ -26,6 +26,7 @@ from forecasting_tools import (
 logger = logging.getLogger(__name__)
 
 METACULUS_TOKEN = os.getenv("METACULUS_TOKEN")
+MY_PERSONAL_ANTHROPIC_KEY = os.getenv("MY_PERSONAL_ANTHROPIC_KEY")
 
 
 class TemplateForecaster(ForecastBot):
@@ -634,11 +635,11 @@ if __name__ == "__main__":
         skip_previously_forecasted_questions=True,
         llms={
             "default": GeneralLlm(
-                model="metaculus/anthropic/claude-3-5-haiku-20241022",
+                model="anthropic/claude-3-5-haiku-20241022",
                 temperature=0.3,
                 timeout=120,
                 allowed_tries=2,
-                api_key=METACULUS_TOKEN,
+                api_key=MY_PERSONAL_ANTHROPIC_KEY,
             )
         },
     )

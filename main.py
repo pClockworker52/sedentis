@@ -59,7 +59,7 @@ class TemplateForecaster(ForecastBot):
                     await asyncio.sleep(1)
                     
                     # Make sure research output includes necessary section headers
-                    if isinstance(research, str) and "## Forecast" not in research:
+                    if isinstance(research, str):
                         research = self._format_research_with_sections(research)
                         
                     logger.debug(f"FULL RESEARCH: {research}")
@@ -81,60 +81,86 @@ class TemplateForecaster(ForecastBot):
     def _format_research_with_sections(self, research: str) -> str:
         """
         Ensure research output has the required section headers that forecast_report.py expects.
-        This version is more robust and ensures the exact format expected by forecast_report.py
+        This is a robust implementation that guarantees proper section headers.
         """
-        # Check if we already have a section with "forecast" in it (case-insensitive)
+        # First check if we have the required sections already
+        has_research_section = False
         has_forecast_section = False
-        for header in re.findall(r'##\s+[^\n]+', research):
-            if "forecast" in header.lower():
-                has_forecast_section = True
-                break
-                
-        if has_forecast_section:
-            # We have a forecast section, but we need to ensure it's properly formatted
-            # Split by section headers
-            sections = re.split(r'##\s+', research)
-            
-            # Rebuild with proper formatting
-            formatted_research = ""
-            for i, section in enumerate(sections):
-                if i == 0:  # Content before any headers
-                    formatted_research += section
-                    continue
-                    
-                # Get the section header and content
-                section_parts = section.split('\n', 1)
-                header = section_parts[0]
-                content = section_parts[1] if len(section_parts) > 1 else ""
-                
-                # Standardize headers - use exact expected format
-                if "forecast" in header.lower():
-                    formatted_research += "## Forecast\n" + content
-                elif any(kw in header.lower() for kw in ["research", "analysis"]):
-                    formatted_research += "## Research\n" + content
-                else:
-                    formatted_research += f"## {header}\n{content}"
-        else:
-            # No forecast section found - we need to create one
-            # Make sure we have a research section first
-            if "## Research" in research or "## Analysis" in research:
-                # Already has structure, just add the forecast section
-                formatted_research = research + "\n\n## Forecast\nThis section contains forecast information that will be processed in the next step."
-            else:
-                # No structure at all - create both sections
-                formatted_research = f"""## Research
-    {research}
-    
-    ## Forecast
-    This section contains forecast information that will be processed in the next step.
-    """
         
-        # FINAL CHECK: Ensure both sections exist with exact format
-        if "## Research" not in formatted_research:
+        # Check for existing sections (case-insensitive)
+        for header in re.findall(r'##\s+[^\n]+', research):
+            if re.search(r'##\s+research', header, re.IGNORECASE):
+                has_research_section = True
+            elif re.search(r'##\s+forecast', header, re.IGNORECASE):
+                has_forecast_section = True
+        
+        # If sections exist but might not be in the right format, standardize them
+        if has_research_section or has_forecast_section:
+            # Split by markdown headers
+            sections = re.split(r'(##\s+[^\n]+)', research)
+            formatted_research = ""
+            
+            # Rebuild with standardized headers
+            i = 0
+            while i < len(sections):
+                if i == 0 and not sections[i].startswith('##'):
+                    # Content before any header - keep it
+                    formatted_research += sections[i]
+                    i += 1
+                    continue
+                
+                if i < len(sections) and sections[i].startswith('##'):
+                    header = sections[i]
+                    content = sections[i+1] if i+1 < len(sections) else ""
+                    
+                    # Standardize header names
+                    if re.search(r'research|analysis', header, re.IGNORECASE):
+                        formatted_research += "## Research\n" + content
+                        has_research_section = True
+                    elif re.search(r'forecast|prediction', header, re.IGNORECASE):
+                        formatted_research += "## Forecast\n" + content
+                        has_forecast_section = True
+                    else:
+                        formatted_research += header + content
+                    
+                    i += 2  # Skip the header and content we just processed
+                else:
+                    # Something went wrong with the splitting - just append
+                    formatted_research += sections[i]
+                    i += 1
+        else:
+            # No sections found - create them from scratch
+            formatted_research = f"## Research\n{research.strip()}\n\n## Forecast\nThis section contains forecast information that will be processed in the next step."
+            has_research_section = True
+            has_forecast_section = True
+        
+        # Final check - ensure both required sections exist
+        if not has_research_section:
+            # Add research section at the beginning
             formatted_research = f"## Research\n{formatted_research}"
-        if "## Forecast" not in formatted_research:
+        
+        if not has_forecast_section:
+            # Add forecast section at the end
             formatted_research += "\n\n## Forecast\nThis section contains forecast information that will be processed in the next step."
         
+        # Final verification - check that the exact section headers exist
+        if "## Research" not in formatted_research:
+            # Replace any variant with the exact format
+            for match in re.findall(r'##\s+research', formatted_research, re.IGNORECASE):
+                formatted_research = formatted_research.replace(match, "## Research")
+        
+        if "## Forecast" not in formatted_research:
+            # Replace any variant with the exact format
+            for match in re.findall(r'##\s+forecast', formatted_research, re.IGNORECASE):
+                formatted_research = formatted_research.replace(match, "## Forecast")
+            
+        # Absolutely ensure sections exist with correct format
+        if "## Research" not in formatted_research:
+            formatted_research = f"## Research\n{formatted_research}"
+        
+        if "## Forecast" not in formatted_research:
+            formatted_research += "\n\n## Forecast\nThis section contains forecast information that will be processed in the next step."
+            
         return formatted_research
 
     async def _call_perplexity(
@@ -256,11 +282,11 @@ class TemplateForecaster(ForecastBot):
                 
                 **CRITICAL FORMAT REQUIREMENTS:**
                 Your response MUST begin with:
-                ## summary
+                ## Summary
                 Then continue with:
-                ## research
+                ## Analysis
                 And then include:
-                ## forecast
+                ## Forecast
                 
                 Before answering in this format, consider:
                 (a) The time left until the outcome to the question is known.
@@ -306,9 +332,9 @@ class TemplateForecaster(ForecastBot):
                 reasoning = await llm.invoke(prompt)
                 logger.info(f"Successfully received reasoning of length {len(reasoning)}")
                 
-                # Ensure forecast section exists (case-insensitive check)
-                if not any(header.lower().find("forecast") != -1 for header in re.findall(r'##\s+[^\n]+', reasoning)):
-                    reasoning = self._format_forecast_with_sections(reasoning)
+                # Always format the reasoning to ensure proper sections
+                reasoning = self._format_forecast_with_sections(reasoning)
+                logger.info(f"Formatted reasoning with sections, new length: {len(reasoning)}")
                 
             except Exception as llm_error:
                 logger.error(f"Error during LLM invoke: {type(llm_error).__name__}: {str(llm_error)}")
@@ -336,81 +362,172 @@ class TemplateForecaster(ForecastBot):
     
     def _format_forecast_with_sections(self, reasoning: str) -> str:
         """
-        Ensure forecast output has the required section headers that forecast_report.py expects.
-        This version is more robust and ensures the exact format expected by forecast_report.py
+        Completely rewritten function to ensure forecast output has the required section headers
+        in exactly the format expected by forecast_report.py
         """
-        # First, check if we already have a section with "forecast" in the title (case-insensitive)
+        # Check if we already have the required sections
+        has_summary_section = False
+        has_analysis_section = False
         has_forecast_section = False
-        for header in re.findall(r'##\s+[^\n]+', reasoning):
-            if "forecast" in header.lower():
-                has_forecast_section = True
-                break
-                
-        if has_forecast_section:
-            # We have a forecast section, but we need to ensure it's properly formatted
-            # Split by section headers
-            sections = re.split(r'##\s+', reasoning)
-            
-            # Rebuild with proper formatting
-            formatted_reasoning = ""
-            for i, section in enumerate(sections):
-                if i == 0:  # Content before any headers
-                    formatted_reasoning += section
-                    continue
-                    
-                # Get the section header and content
-                section_parts = section.split('\n', 1)
-                header = section_parts[0]
-                content = section_parts[1] if len(section_parts) > 1 else ""
-                
-                # Standardize headers - use exact expected format
-                if "forecast" in header.lower():
-                    formatted_reasoning += "## Forecast\n" + content
-                elif any(kw in header.lower() for kw in ["analysis", "reasoning", "summary"]):
-                    formatted_reasoning += "## Analysis\n" + content
-                else:
-                    formatted_reasoning += f"## {header}\n{content}"
-        else:
-            # No forecast section - we need to create one
-            # First check if we have "Probability:" which often marks the forecast
-            if "Probability:" in reasoning:
-                # Try to find a logical split point
-                if "## Analysis" in reasoning or "## Summary" in reasoning or "## Reasoning" in reasoning:
-                    # Already has some structure, just add the forecast section
-                    # Find the last occurrence of a probability statement
-                    last_prob_index = reasoning.rfind("Probability:")
-                    
-                    # Extract content before and after the probability statement
-                    analysis = reasoning[:last_prob_index].strip()
-                    forecast = reasoning[last_prob_index:].strip()
-                    
-                    formatted_reasoning = f"{analysis}\n\n## Forecast\n{forecast}"
-                else:
-                    # No existing structure, try to split at the probability statement
-                    parts = reasoning.split("Probability:", 1)
-                    analysis = parts[0].strip()
-                    forecast = "Probability:" + parts[1].strip()
-                    
-                    formatted_reasoning = f"## Analysis\n{analysis}\n\n## Forecast\n{forecast}"
-            else:
-                # No clear split point - add generic sections
-                # Check if the text is long enough to warrant splitting
-                if len(reasoning.split()) > 100:
-                    # Long text - use the last 20% as forecast
-                    words = reasoning.split()
-                    split_point = int(len(words) * 0.8)
-                    analysis = " ".join(words[:split_point])
-                    forecast = " ".join(words[split_point:])
-                    
-                    formatted_reasoning = f"## Analysis\n{analysis}\n\n## Forecast\n{forecast}"
-                else:
-                    # Short text - keep it simple
-                    formatted_reasoning = f"## Analysis\n{reasoning}\n\n## Forecast\nBased on the analysis, the forecast is provided above."
         
-        # FINAL CHECK: Ensure a "## Forecast" section exists (exact format)
-        if "## Forecast" not in formatted_reasoning:
-            # If still not present, add it explicitly
-            formatted_reasoning += "\n\n## Forecast\nThe forecast is derived from the analysis above."
+        for header in re.findall(r'##\s+[^\n]+', reasoning):
+            if re.search(r'##\s+summary', header, re.IGNORECASE):
+                has_summary_section = True
+            elif re.search(r'##\s+analysis|##\s+research|##\s+reasoning', header, re.IGNORECASE):
+                has_analysis_section = True
+            elif re.search(r'##\s+forecast|##\s+prediction', header, re.IGNORECASE):
+                has_forecast_section = True
+        
+        # If we have at least one proper section, try to reformat the document
+        if has_summary_section or has_analysis_section or has_forecast_section:
+            # Split by section headers
+            sections = re.split(r'(##\s+[^\n]+)', reasoning)
+            formatted_reasoning = ""
+            
+            # Track which sections we've processed
+            processed_summary = False
+            processed_analysis = False
+            processed_forecast = False
+            
+            i = 0
+            while i < len(sections):
+                if i == 0 and not sections[i].startswith('##'):
+                    # Content before any header - keep it
+                    # If this is substantial content and we don't have a summary yet,
+                    # treat it as a summary
+                    if len(sections[i].strip()) > 50 and not has_summary_section:
+                        formatted_reasoning += "## Summary\n" + sections[i]
+                        processed_summary = True
+                    else:
+                        formatted_reasoning += sections[i]
+                    i += 1
+                    continue
+                
+                if i < len(sections) and sections[i].startswith('##'):
+                    header = sections[i]
+                    content = sections[i+1] if i+1 < len(sections) else ""
+                    
+                    # Standardize section headers
+                    if re.search(r'summary', header, re.IGNORECASE):
+                        formatted_reasoning += "## Summary\n" + content
+                        processed_summary = True
+                    elif re.search(r'analysis|research|reasoning', header, re.IGNORECASE) and not processed_analysis:
+                        formatted_reasoning += "## Analysis\n" + content
+                        processed_analysis = True
+                    elif re.search(r'forecast|prediction', header, re.IGNORECASE):
+                        formatted_reasoning += "## Forecast\n" + content
+                        processed_forecast = True
+                    else:
+                        # Other headers - keep them unchanged
+                        formatted_reasoning += header + content
+                    
+                    i += 2  # Skip the header and content
+                else:
+                    # Something unexpected - just append
+                    formatted_reasoning += sections[i]
+                    i += 1
+            
+            # Now make sure all required sections exist
+            if not processed_summary:
+                formatted_reasoning = "## Summary\nThis is a summary of the forecasting analysis.\n\n" + formatted_reasoning
+            
+            if not processed_analysis:
+                # Add after summary if it exists
+                if "## Summary" in formatted_reasoning:
+                    parts = formatted_reasoning.split("## Summary", 1)
+                    summary_content = parts[1].split("##", 1)[0] if "##" in parts[1] else parts[1]
+                    remaining = parts[1].split("##", 1)[1] if "##" in parts[1] else ""
+                    formatted_reasoning = "## Summary" + summary_content + "\n## Analysis\nThis section contains analysis for the forecast.\n\n##" + remaining
+                else:
+                    formatted_reasoning = "## Analysis\nThis section contains analysis for the forecast.\n\n" + formatted_reasoning
+            
+            if not processed_forecast:
+                formatted_reasoning += "\n\n## Forecast\nBased on the analysis, the forecast is provided here."
+        else:
+            # No proper sections found - create from scratch with all required sections
+            # Try to extract probability statement if it exists
+            probability_line = ""
+            for line in reasoning.split('\n'):
+                if "probability:" in line.lower():
+                    probability_line = line
+                    break
+            
+            # Split content into logical sections
+            lines = reasoning.strip().split('\n')
+            line_count = len(lines)
+            
+            if line_count <= 3:
+                # Very short content - minimal structure
+                formatted_reasoning = f"""## Summary
+A brief summary of the forecast.
+
+## Analysis
+{reasoning.strip()}
+
+## Forecast
+{probability_line if probability_line else "The forecast is derived from the analysis above."}
+"""
+            else:
+                # Longer content - try to divide it meaningfully
+                summary_end = min(int(line_count * 0.2), 5)  # First 20% or 5 lines for summary
+                analysis_end = int(line_count * 0.8)  # 80% for analysis
+                
+                summary_content = '\n'.join(lines[:summary_end])
+                analysis_content = '\n'.join(lines[summary_end:analysis_end])
+                forecast_content = '\n'.join(lines[analysis_end:])
+                
+                # Add probability line to forecast if not already there
+                if probability_line and probability_line not in forecast_content:
+                    forecast_content += f"\n\n{probability_line}"
+                
+                formatted_reasoning = f"""## Summary
+{summary_content if summary_content.strip() else "A brief summary of the forecast."}
+
+## Analysis
+{analysis_content if analysis_content.strip() else reasoning.strip()}
+
+## Forecast
+{forecast_content if forecast_content.strip() else "The forecast is derived from the analysis above."}
+"""
+        
+        # Final verification - ensure all required sections exist with EXACT formatting
+        required_sections = ["## Summary", "## Analysis", "## Forecast"]
+        for section in required_sections:
+            if section not in formatted_reasoning:
+                # Section missing with exact format - add it
+                if section == "## Summary":
+                    formatted_reasoning = f"{section}\nSummary of the forecast.\n\n{formatted_reasoning}"
+                elif section == "## Analysis":
+                    # Add after summary
+                    if "## Summary" in formatted_reasoning:
+                        parts = formatted_reasoning.split("## Summary", 1)
+                        summary_part = "## Summary" + parts[1].split("##", 1)[0]
+                        rest_part = "##" + parts[1].split("##", 1)[1] if "##" in parts[1] else ""
+                        formatted_reasoning = f"{summary_part}\n\n{section}\nAnalysis for the forecast.\n\n{rest_part}"
+                    else:
+                        formatted_reasoning = f"{section}\nAnalysis for the forecast.\n\n{formatted_reasoning}"
+                elif section == "## Forecast":
+                    formatted_reasoning += f"\n\n{section}\nThe forecast based on the analysis."
+        
+        # Ensure the sections appear in the correct order
+        # This is a last resort if the above logic failed to order them correctly
+        if "## Summary" in formatted_reasoning and "## Analysis" in formatted_reasoning and "## Forecast" in formatted_reasoning:
+            summary_content = re.search(r'## Summary(.*?)(?=##|$)', formatted_reasoning, re.DOTALL).group(1).strip()
+            analysis_content = re.search(r'## Analysis(.*?)(?=##|$)', formatted_reasoning, re.DOTALL).group(1).strip()
+            forecast_content = re.search(r'## Forecast(.*?)(?=##|$)', formatted_reasoning, re.DOTALL).group(1).strip()
+            
+            formatted_reasoning = f"""## Summary
+{summary_content}
+
+## Analysis
+{analysis_content}
+
+## Forecast
+{forecast_content}
+"""
+        
+        # Log the final formatted result
+        logger.info(f"Final formatted reasoning has sections: {'## Summary' in formatted_reasoning}, {'## Analysis' in formatted_reasoning}, {'## Forecast' in formatted_reasoning}")
         
         return formatted_reasoning
 
@@ -471,9 +588,10 @@ class TemplateForecaster(ForecastBot):
                
             4. **Justify From Sedentis Perspective:** Explain your probability distribution in terms of resource needs, complexity management, control imperatives, and resilience to shocks.
             
-            Your answer must be divided into two sections:
-            1. First section titled "## Analysis" containing your detailed reasoning
-            2. Second section titled "## Forecast" containing your final probability assessment
+            Your answer must be divided into three sections:
+            1. First section titled "## Summary" containing a brief overview
+            2. Second section titled "## Analysis" containing your detailed reasoning
+            3. Third section titled "## Forecast" containing your final probability assessment
             
             The last thing you write is your final probabilities for the N options in this order {question.options} as:
             Option_A: Probability_A
@@ -487,12 +605,10 @@ class TemplateForecaster(ForecastBot):
         )
         reasoning = await self.get_llm("default", "llm").invoke(prompt)
          
-        # --- ALWAYS FORMAT THE REASONING ---
+        # Always format the reasoning to ensure proper sections
         logger.info("Applying mandatory formatting to reasoning...")
         reasoning = self._format_forecast_with_sections(reasoning)
-        # Add debug log to see the result
         logger.debug(f"Formatted Reasoning START:\n{reasoning[:500]}\nFormatted Reasoning END")
-        # --- Formatting done ---
    
         prediction: PredictedOptionList = (
             PredictionExtractor.extract_option_list_with_percentage_afterwards(
@@ -582,9 +698,10 @@ class TemplateForecaster(ForecastBot):
                - Potential resistances or external forces
                - The inherent uncertainties in complex system prediction
                
-            Your answer must be divided into two sections:
-            1. First section titled "## Analysis" containing your detailed reasoning
-            2. Second section titled "## Forecast" containing your final percentile distribution
+            Your answer must be divided into three sections:
+            1. First section titled "## Summary" containing a brief overview
+            2. Second section titled "## Analysis" containing your detailed reasoning
+            3. Third section titled "## Forecast" containing your final percentile distribution
             
             The last thing you write is your final answer as:
             "
@@ -604,12 +721,10 @@ class TemplateForecaster(ForecastBot):
         )
         reasoning = await self.get_llm("default", "llm").invoke(prompt)
         
-        # --- ALWAYS FORMAT THE REASONING ---
+        # Always format the reasoning to ensure proper sections
         logger.info("Applying mandatory formatting to reasoning...")
         reasoning = self._format_forecast_with_sections(reasoning)
-        # Add debug log to see the result
         logger.debug(f"Formatted Reasoning START:\n{reasoning[:500]}\nFormatted Reasoning END")
-        # --- Formatting done ---
     
         prediction: NumericDistribution = (
             PredictionExtractor.extract_numeric_distribution_from_list_of_percentile_number_and_probability(
@@ -721,8 +836,34 @@ if __name__ == "__main__":
             template_bot.forecast_questions(questions, return_exceptions=True)
         )
     
-    # After generating forecast_reports...
-    
-    logger.info("Attempting to log report summary...")
-    TemplateForecaster.log_report_summary(forecast_reports)
-    logger.info("Report summary logging complete (or attempted).")
+    try:
+        # Try the standard report summary 
+        logger.info("Attempting to log report summary...")
+        TemplateForecaster.log_report_summary(forecast_reports)
+        logger.info("Report summary logging complete.")
+    except Exception as e:
+        # Fallback manual report summary
+        logger.error(f"Error in log_report_summary: {str(e)}")
+        logger.info("Forecast Report Summary (manual fallback):")
+        
+        for i, report in enumerate(forecast_reports):
+            try:
+                if hasattr(report, 'question'):
+                    logger.info(f"Report {i+1}: {report.question.page_url}")
+                    logger.info(f"  Question: {report.question.question_text[:100]}...")
+                    
+                    # Try to safely get prediction
+                    prediction_str = "N/A"
+                    try:
+                        if hasattr(report, 'prediction'):
+                            prediction_str = str(report.prediction)
+                    except:
+                        pass
+                    
+                    logger.info(f"  Prediction: {prediction_str}")
+                elif isinstance(report, Exception):
+                    logger.info(f"Report {i+1}: ERROR - {type(report).__name__}: {str(report)}")
+                else:
+                    logger.info(f"Report {i+1}: Unknown format - {type(report)}")
+            except Exception as report_err:
+                logger.error(f"Error processing report {i+1}: {str(report_err)}")

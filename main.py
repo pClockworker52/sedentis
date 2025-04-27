@@ -622,7 +622,6 @@ if __name__ == "__main__":
         "quarterly_cup",
         "test_questions",
     ], "Invalid run mode"
-    my_anthropic_key = os.getenv("METACULUS_TOKEN")
     
     template_bot = TemplateForecaster(
         research_reports_per_question=1,
@@ -631,7 +630,15 @@ if __name__ == "__main__":
         publish_reports_to_metaculus=True,
         folder_to_save_reports_to=None,
         skip_previously_forecasted_questions=True,
-        # Remove all custom LLM configuration - let system use defaults
+        llms={
+            "default": GeneralLlm(
+                model="anthropic/claude-3-7-sonnet-latest",
+                temperature=0.3,
+                timeout=120,
+                allowed_tries=2,
+            ),
+            "summarizer": "anthropic/claude-3-7-sonnet-latest"
+        },
     )
 
     if run_mode == "tournament":

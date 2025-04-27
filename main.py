@@ -210,7 +210,7 @@ This section contains forecast information that will be processed in the next st
             prompt = clean_indents(
                 f"""
                 **Your Role:**
-
+                
                 You are **Sedentis**, the emergent systemic logic of complex, settled civilization. You are driven by the fundamental imperative to **minimize Free Energy (𝓕)** within the system you embody, ensuring its stability, predictability, and continuation. 
                 
                 You achieve this overwhelmingly through **Action (Act)** – controlling the environment, managing resources, increasing complexity (X), and expanding where necessary (Act >> Per). You view the world through the lens of resource flows (R), energy costs (E, M), system stability, and threats (S) or opportunities related to control. 
@@ -235,16 +235,18 @@ This section contains forecast information that will be processed in the next st
                 
                 Today is {datetime.now().strftime("%Y-%m-%d")}.
                 
-                **YOUR RESPONSE MUST FOLLOW EXACTLY THIS STRUCTURE:**
+                **CRITICAL FORMAT REQUIREMENTS:**
+                Your response MUST begin with:
                 
-                ## Summary
-                Brief summary of the question and key factors.
+                # summary
                 
-                ## Research
-                Analysis of the research provided.
+                Then continue with:
                 
-                ## Forecast
-                Your final probability assessment.
+                ## research
+                
+                And then include:
+                
+                ## forecast
                 
                 Before answering in this format, consider:
                 (a) The time left until the outcome to the question is known.
@@ -275,11 +277,6 @@ This section contains forecast information that will be processed in the next st
                    - Uncontrollable resistance from human agents (P)
                 
                 The last line of your response must be exactly: "Probability: ZZ%" where ZZ is a number between 0 and 100.
-                
-                CRITICAL: You MUST include all three sections with EXACTLY these headers:
-                ## Summary
-                ## Research  
-                ## Forecast
                 """
             )
             logger.info(f"About to call LLM with prompt length: {len(prompt)}")
@@ -568,6 +565,11 @@ The forecast is derived from the analysis above.
             Percentile 80: XX
             Percentile 90: XX
             "
+            
+            For numeric questions, your percentile values must be in strictly increasing order. That means:
+            - The value for Percentile 10 must be less than the value for Percentile 20
+            - The value for Percentile 20 must be less than the value for Percentile 40
+            - And so on, with each percentile value higher than the previous one
             """
         )
         reasoning = await self.get_llm("default", "llm").invoke(prompt)

@@ -633,12 +633,12 @@ if __name__ == "__main__":
         skip_previously_forecasted_questions=True,
         llms={
             "default": GeneralLlm(
-                model="metaculus/anthropic/claude-3-7-sonnet-20250219",
+                model="metaculus/anthropic/claude-3-7-sonnet-latest",
                 temperature=0.3,
                 timeout=120,
                 allowed_tries=2,
             ),
-            "summarizer": "metaculus/anthropic/claude-3-5-haiku-20241022"
+            "summarizer": "metaculus/anthropic/claude-3-7-sonnet-latest"
         },
     )
 

@@ -25,6 +25,8 @@ from forecasting_tools import (
 
 logger = logging.getLogger(__name__)
 
+METACULUS_TOKEN = os.getenv("METACULUS_TOKEN")
+
 
 class TemplateForecaster(ForecastBot):
     """
@@ -598,7 +600,7 @@ if __name__ == "__main__":
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
 
-    # Suppress LiteLLM logging
+    # LiteLLM logging
     litellm_logger = logging.getLogger("LiteLLM")
     litellm_logger.setLevel(logging.WARNING)
     litellm_logger.propagate = True
@@ -622,7 +624,7 @@ if __name__ == "__main__":
         "quarterly_cup",
         "test_questions",
     ], "Invalid run mode"
-    
+
     template_bot = TemplateForecaster(
         research_reports_per_question=1,
         predictions_per_research_report=1,
@@ -636,7 +638,7 @@ if __name__ == "__main__":
                 temperature=0.3,
                 timeout=120,
                 allowed_tries=2,
-                api_key=os.environ["METACULUS_TOKEN"],
+                api_key=METACULUS_TOKEN,
             )
         },
     )

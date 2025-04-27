@@ -632,26 +632,19 @@ if __name__ == "__main__":
     print(f"METACULUS_TOKEN exists: {METACULUS_TOKEN is not None}")
     template_bot = TemplateForecaster(
         research_reports_per_question=1,
-        predictions_per_research_report=1,
+        predictions_per_research_report=5,
         use_research_summary_to_forecast=False,
         publish_reports_to_metaculus=True,
         folder_to_save_reports_to=None,
         skip_previously_forecasted_questions=True,
-        llms={
+        llms={  # choose your model names or GeneralLlm llms here, otherwise defaults will be chosen for you
             "default": GeneralLlm(
-                model="gpt-4o",  # Use OpenAI's model
+                model="metaculus/gpt-4o",
                 temperature=0.3,
-                timeout=120,
+                timeout=40,
                 allowed_tries=2,
-                api_base="https://llm-proxy.metaculus.com/proxy/openai/v1",
-                api_key="placeholder_key",  # This isn't used
-                api_type="openai",
-                headers={
-                    "Authorization": f"Token {METACULUS_TOKEN}",
-                    "Content-Type": "application/json"
-                }
             ),
-            "summarizer": "gpt-4o"
+            "summarizer": "openai/gpt-4o-mini",
         },
     )
 

@@ -26,9 +26,8 @@ from forecasting_tools import (
 logger = logging.getLogger(__name__)
 
 METACULUS_TOKEN = os.getenv("METACULUS_TOKEN")
-MY_PERSONAL_ANTHROPIC_KEY = os.getenv("MY_PERSONAL_ANTHROPIC_KEY")
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-
+_question_cache = {}
 
 class TemplateForecaster(ForecastBot):
     """
@@ -744,10 +743,14 @@ if __name__ == "__main__":
             "https://www.metaculus.com/questions/22427/number-of-new-leading-ai-labs/",  # Number of New Leading AI Labs - Multiple Choice
         ]
         template_bot.skip_previously_forecasted_questions = False
-        questions = [
-            MetaculusApi.get_question_by_url(question_url)
-            for question_url in EXAMPLE_QUESTIONS
-        ]
+        questions = []
+        for question_url in EXAMPLE_QUESTIONS:
+            if question_url in _question_cache:
+                questions.append(_question_cache[question_url])
+            else:
+                question = MetaculusApi.get_question_by_url(question_url)
+                _question_cache[question_url] = question
+                questions.append(question)
         forecast_reports = asyncio.run(
             template_bot.forecast_questions(questions, return_exceptions=True)
         )

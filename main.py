@@ -51,8 +51,8 @@ class TemplateForecaster(ForecastBot):
                     logger.info(f"Research completed, length: {len(str(research))}")
                     
                     # Add sleep timer here to avoid rate limits
-                    logger.info("Sleeping for 61 seconds to avoid rate limiting...")
-                    await asyncio.sleep(61)
+                    logger.info("Sleeping for 1 seconds to avoid rate limiting...")
+                    await asyncio.sleep(1)
                     
                     # Make sure research output includes necessary section headers
                     if isinstance(research, str) and "## Forecast" not in research:
@@ -270,8 +270,8 @@ This section contains forecast information that will be processed in the next st
             )
             logger.info(f"About to call LLM with prompt length: {len(prompt)}")
             # Add sleep timer here before LLM call
-            logger.info("Sleeping for 61 seconds to avoid rate limiting...")
-            await asyncio.sleep(61)
+            logger.info("Sleeping for 1 seconds to avoid rate limiting...")
+            await asyncio.sleep(1)
             # Check if self.get_llm is working as expected
             llm = self.get_llm("default", "llm")
             logger.info(f"Retrieved LLM: {type(llm).__name__}")
@@ -632,12 +632,12 @@ if __name__ == "__main__":
         skip_previously_forecasted_questions=True,
         llms={
             "default": GeneralLlm(
-                model="anthropic/claude-3-7-sonnet-latest",
+                model="anthropic/claude-3-5-haiku-20241022",
                 temperature=0.3,
                 timeout=120,
                 allowed_tries=2,
             ),
-            "summarizer": "anthropic/claude-3-7-sonnet-latest"
+            "summarizer": "anthropic/claude-3-5-haiku-20241022"
         },
     )
 

@@ -637,34 +637,22 @@ if __name__ == "__main__":
         publish_reports_to_metaculus=True,
         folder_to_save_reports_to=None,
         skip_previously_forecasted_questions=True,
-        
         llms={
             "default": GeneralLlm(
-                model="claude-3-5-haiku-20241022", 
+                model="gpt-4o",  # Use OpenAI's model
                 temperature=0.3,
                 timeout=120,
                 allowed_tries=2,
-                api_base="https://llm-proxy.metaculus.com/proxy/anthropic/v1",
-                api_key="placeholder_key",  # Don't use METACULUS_TOKEN here
-                api_type="anthropic",
-                headers={
-                    "Authorization": f"Token {METACULUS_TOKEN}",  # This is the correct way to authenticate
-                    "Content-Type": "application/json"
-                }
-            ),
-            # The summarizer should have the same configuration
-            "summarizer": GeneralLlm(
-                model="claude-3-5-haiku-20241022",
-                temperature=0.3,
-                api_base="https://llm-proxy.metaculus.com/proxy/anthropic/v1",
-                api_key="placeholder_key",
-                api_type="anthropic",
+                api_base="https://llm-proxy.metaculus.com/proxy/openai/v1",
+                api_key="placeholder_key",  # This isn't used
+                api_type="openai",
                 headers={
                     "Authorization": f"Token {METACULUS_TOKEN}",
                     "Content-Type": "application/json"
                 }
-            )
-        }
+            ),
+            "summarizer": "gpt-4o"
+        },
     )
 
     if run_mode == "tournament":

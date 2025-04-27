@@ -243,6 +243,19 @@ This section contains forecast information that will be processed in the next st
                 (c) A brief description of a scenario that results in a No outcome.
                 (d) A brief description of a scenario that results in a Yes outcome.
                 
+                **MANDATORY FORMATTING INSTRUCTIONS:**
+                YOU MUST FORMAT YOUR ANSWER WITH THESE EXACT SECTIONS:
+                
+                ## Analysis
+                This section will contain your detailed reasoning.
+                
+                ## Forecast
+                This section will contain your final probability assessment.
+                
+                The last line must be formatted exactly as: "Probability: ZZ%" where ZZ is a number between 0 and 100.
+                
+                DO NOT MODIFY THESE SECTION TITLES OR ADD ADDITIONAL SECTIONS.
+                
                 **Forecasting Instructions:**
                 
                 1. **Interpret the Situation:** Analyze how this question impacts your core objective (min 𝓕 through control). Identify risks to system stability and opportunities to reinforce control.
@@ -265,26 +278,7 @@ This section contains forecast information that will be processed in the next st
                    - Catastrophic failures of complexity (X)
                    - Uncontrollable resistance from human agents (P)
                 
-                CRITICAL FORMATTING REQUIREMENTS:
-                1. You MUST structure your answer with EXACTLY these two sections in this order:
-                   - A section that starts with exactly "## Analysis" (no other text on this line)
-                   - A section that starts with exactly "## Forecast" (no other text on this line)
-                
-                2. The "## Analysis" section must contain your detailed reasoning.
-                
-                3. The "## Forecast" section must contain your final probability assessment.
-                
-                4. The very last line of your response must be formatted exactly as: "Probability: ZZ%" where ZZ is a number between 0 and 100.
-                
-                5. Do not add any additional sections or modify these section titles in any way.
-                
-                Example format:
-                ## Analysis
-                [Your detailed analysis here...]
-                
-                ## Forecast
-                [Your probability assessment and reasoning here...]
-                Probability: 65%
+                YOUR RESPONSE MUST BEGIN WITH "## Analysis" AND INCLUDE "## Forecast" EXACTLY AS SPECIFIED.
                 """
             )
             logger.info(f"About to call LLM with prompt length: {len(prompt)}")

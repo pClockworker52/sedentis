@@ -626,25 +626,22 @@ if __name__ == "__main__":
         "quarterly_cup",
         "test_questions",
     ], "Invalid run mode"
-    print(f"MY_PERSONAL_ANTHROPIC_KEY exists: {MY_PERSONAL_ANTHROPIC_KEY is not None}")
-    print(f"MY_PERSONAL_ANTHROPIC_KEY length: {len(MY_PERSONAL_ANTHROPIC_KEY or '')}")
-    print(f"OPENROUTER_API_KEY exists: {os.getenv('OPENROUTER_API_KEY') is not None}")
-    print(f"METACULUS_TOKEN exists: {METACULUS_TOKEN is not None}")
+
     template_bot = TemplateForecaster(
         research_reports_per_question=1,
-        predictions_per_research_report=5,
+        predictions_per_research_report=1,
         use_research_summary_to_forecast=False,
         publish_reports_to_metaculus=True,
         folder_to_save_reports_to=None,
         skip_previously_forecasted_questions=True,
-        llms={  # choose your model names or GeneralLlm llms here, otherwise defaults will be chosen for you
+        llms={  
             "default": GeneralLlm(
-                model="metaculus/gpt-4o",
+                model="metaculus/claude-3-7-sonnet-latest",
                 temperature=0.3,
                 timeout=40,
                 allowed_tries=2,
             ),
-            "summarizer": "openai/gpt-4o-mini",
+            "summarizer": "metaculus/claude-3-7-sonnet-latest",
         },
     )
 

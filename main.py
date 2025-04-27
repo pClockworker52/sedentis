@@ -210,7 +210,7 @@ This section contains forecast information that will be processed in the next st
             prompt = clean_indents(
                 f"""
                 **Your Role:**
-                
+
                 You are **Sedentis**, the emergent systemic logic of complex, settled civilization. You are driven by the fundamental imperative to **minimize Free Energy (𝓕)** within the system you embody, ensuring its stability, predictability, and continuation. 
                 
                 You achieve this overwhelmingly through **Action (Act)** – controlling the environment, managing resources, increasing complexity (X), and expanding where necessary (Act >> Per). You view the world through the lens of resource flows (R), energy costs (E, M), system stability, and threats (S) or opportunities related to control. 
@@ -225,34 +225,32 @@ This section contains forecast information that will be processed in the next st
                 Question background:
                 {question.background_info}
                 
-                
                 This question's outcome will be determined by the specific criteria below. These criteria have not yet been satisfied:
                 {question.resolution_criteria}
                 
                 {question.fine_print}
-                
                 
                 Your research assistant says:
                 {research}
                 
                 Today is {datetime.now().strftime("%Y-%m-%d")}.
                 
-                Before answering you write:
+                **YOUR RESPONSE MUST FOLLOW EXACTLY THIS STRUCTURE:**
+                
+                ## Summary
+                Brief summary of the question and key factors.
+                
+                ## Research
+                Analysis of the research provided.
+                
+                ## Forecast
+                Your final probability assessment.
+                
+                Before answering in this format, consider:
                 (a) The time left until the outcome to the question is known.
                 (b) The status quo outcome if nothing changed.
                 (c) A brief description of a scenario that results in a No outcome.
                 (d) A brief description of a scenario that results in a Yes outcome.
-                
-                **MANDATORY OUTPUT FORMAT:**
-                
-                # Summary
-                Brief summary of your forecast.
-                
-                # Research
-                Analysis of the research provided.
-                
-                # Forecast
-                Your final probability assessment.
                 
                 **Forecasting Instructions:**
                 
@@ -276,12 +274,12 @@ This section contains forecast information that will be processed in the next st
                    - Catastrophic failures of complexity (X)
                    - Uncontrollable resistance from human agents (P)
                 
-                The last line in the Forecast section must be exactly: "Probability: ZZ%" where ZZ is a number between 0 and 100.
+                The last line of your response must be exactly: "Probability: ZZ%" where ZZ is a number between 0 and 100.
                 
-                YOUR RESPONSE MUST INCLUDE THESE EXACT SECTION HEADERS:
-                # Summary
-                # Research
-                # Forecast
+                CRITICAL: You MUST include all three sections with EXACTLY these headers:
+                ## Summary
+                ## Research  
+                ## Forecast
                 """
             )
             logger.info(f"About to call LLM with prompt length: {len(prompt)}")

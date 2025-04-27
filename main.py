@@ -81,41 +81,60 @@ class TemplateForecaster(ForecastBot):
     def _format_research_with_sections(self, research: str) -> str:
         """
         Ensure research output has the required section headers that forecast_report.py expects.
-        Case-insensitive check but case-sensitive addition of headers.
+        This version is more robust and ensures the exact format expected by forecast_report.py
         """
-        # Check if any variation of "forecast" exists in a section header (case-insensitive)
-        if any(header.lower().find("forecast") != -1 for header in re.findall(r'##\s+[^\n]+', research)):
-            # Research already has a forecast section, but let's ensure it's properly formatted
-            # Extract existing content
+        # Check if we already have a section with "forecast" in it (case-insensitive)
+        has_forecast_section = False
+        for header in re.findall(r'##\s+[^\n]+', research):
+            if "forecast" in header.lower():
+                has_forecast_section = True
+                break
+                
+        if has_forecast_section:
+            # We have a forecast section, but we need to ensure it's properly formatted
+            # Split by section headers
             sections = re.split(r'##\s+', research)
             
-            # Rebuild with proper capitalization of section headers
+            # Rebuild with proper formatting
             formatted_research = ""
             for i, section in enumerate(sections):
-                if i == 0:  # This is content before any ## header
+                if i == 0:  # Content before any headers
                     formatted_research += section
                     continue
                     
+                # Get the section header and content
                 section_parts = section.split('\n', 1)
                 header = section_parts[0]
                 content = section_parts[1] if len(section_parts) > 1 else ""
                 
+                # Standardize headers - use exact expected format
                 if "forecast" in header.lower():
-                    formatted_research += f"## Forecast\n{content}"
-                elif "research" in header.lower() or "analysis" in header.lower():
-                    formatted_research += f"## Research\n{content}"
+                    formatted_research += "## Forecast\n" + content
+                elif any(kw in header.lower() for kw in ["research", "analysis"]):
+                    formatted_research += "## Research\n" + content
                 else:
                     formatted_research += f"## {header}\n{content}"
-            
-            return formatted_research
-            
-        # No forecast section found - add the section headers that forecast_report.py expects
-        formatted_research = f"""## Research
-{research}
-
-## Forecast
-This section contains forecast information that will be processed in the next step.
-"""
+        else:
+            # No forecast section found - we need to create one
+            # Make sure we have a research section first
+            if "## Research" in research or "## Analysis" in research:
+                # Already has structure, just add the forecast section
+                formatted_research = research + "\n\n## Forecast\nThis section contains forecast information that will be processed in the next step."
+            else:
+                # No structure at all - create both sections
+                formatted_research = f"""## Research
+    {research}
+    
+    ## Forecast
+    This section contains forecast information that will be processed in the next step.
+    """
+        
+        # FINAL CHECK: Ensure both sections exist with exact format
+        if "## Research" not in formatted_research:
+            formatted_research = f"## Research\n{formatted_research}"
+        if "## Forecast" not in formatted_research:
+            formatted_research += "\n\n## Forecast\nThis section contains forecast information that will be processed in the next step."
+        
         return formatted_research
 
     async def _call_perplexity(
@@ -318,67 +337,80 @@ This section contains forecast information that will be processed in the next st
     def _format_forecast_with_sections(self, reasoning: str) -> str:
         """
         Ensure forecast output has the required section headers that forecast_report.py expects.
-        Case-insensitive check but case-sensitive addition of headers.
+        This version is more robust and ensures the exact format expected by forecast_report.py
         """
-        # Check if any variation of "forecast" exists in a section header (case-insensitive)
-        if any(header.lower().find("forecast") != -1 for header in re.findall(r'##\s+[^\n]+', reasoning)):
-            # Already has a forecast section, but let's ensure it's properly capitalized
+        # First, check if we already have a section with "forecast" in the title (case-insensitive)
+        has_forecast_section = False
+        for header in re.findall(r'##\s+[^\n]+', reasoning):
+            if "forecast" in header.lower():
+                has_forecast_section = True
+                break
+                
+        if has_forecast_section:
+            # We have a forecast section, but we need to ensure it's properly formatted
+            # Split by section headers
             sections = re.split(r'##\s+', reasoning)
             
-            # Rebuild with proper capitalization of section headers
+            # Rebuild with proper formatting
             formatted_reasoning = ""
             for i, section in enumerate(sections):
-                if i == 0:  # This is content before any ## header
+                if i == 0:  # Content before any headers
                     formatted_reasoning += section
                     continue
                     
+                # Get the section header and content
                 section_parts = section.split('\n', 1)
                 header = section_parts[0]
                 content = section_parts[1] if len(section_parts) > 1 else ""
                 
+                # Standardize headers - use exact expected format
                 if "forecast" in header.lower():
-                    formatted_reasoning += f"## Forecast\n{content}"
-                elif "analysis" in header.lower() or "reasoning" in header.lower():
-                    formatted_reasoning += f"## Analysis\n{content}"
+                    formatted_reasoning += "## Forecast\n" + content
+                elif any(kw in header.lower() for kw in ["analysis", "reasoning", "summary"]):
+                    formatted_reasoning += "## Analysis\n" + content
                 else:
                     formatted_reasoning += f"## {header}\n{content}"
-            
-            return formatted_reasoning
-        
-        # Check if there's already some structure we can work with
-        elif "## Analysis" in reasoning or "## Reasoning" in reasoning:
-            # Extract the last paragraph which should contain the probability
-            paragraphs = reasoning.split("\n\n")
-            analysis = "\n\n".join(paragraphs[:-1])
-            forecast = paragraphs[-1]
-            
-            formatted_reasoning = f"""## Analysis
-{analysis}
-
-## Forecast
-{forecast}
-"""
         else:
-            # Split at the probability statement
+            # No forecast section - we need to create one
+            # First check if we have "Probability:" which often marks the forecast
             if "Probability:" in reasoning:
-                parts = reasoning.split("Probability:", 1)
-                analysis = parts[0].strip()
-                forecast = "Probability:" + parts[1].strip()
-                
-                formatted_reasoning = f"""## Analysis
-{analysis}
-
-## Forecast
-{forecast}
-"""
+                # Try to find a logical split point
+                if "## Analysis" in reasoning or "## Summary" in reasoning or "## Reasoning" in reasoning:
+                    # Already has some structure, just add the forecast section
+                    # Find the last occurrence of a probability statement
+                    last_prob_index = reasoning.rfind("Probability:")
+                    
+                    # Extract content before and after the probability statement
+                    analysis = reasoning[:last_prob_index].strip()
+                    forecast = reasoning[last_prob_index:].strip()
+                    
+                    formatted_reasoning = f"{analysis}\n\n## Forecast\n{forecast}"
+                else:
+                    # No existing structure, try to split at the probability statement
+                    parts = reasoning.split("Probability:", 1)
+                    analysis = parts[0].strip()
+                    forecast = "Probability:" + parts[1].strip()
+                    
+                    formatted_reasoning = f"## Analysis\n{analysis}\n\n## Forecast\n{forecast}"
             else:
-                # If we can't find a good split point, just add the section headers
-                formatted_reasoning = f"""## Analysis
-{reasoning.strip()}
-
-## Forecast
-The forecast is derived from the analysis above.
-"""
+                # No clear split point - add generic sections
+                # Check if the text is long enough to warrant splitting
+                if len(reasoning.split()) > 100:
+                    # Long text - use the last 20% as forecast
+                    words = reasoning.split()
+                    split_point = int(len(words) * 0.8)
+                    analysis = " ".join(words[:split_point])
+                    forecast = " ".join(words[split_point:])
+                    
+                    formatted_reasoning = f"## Analysis\n{analysis}\n\n## Forecast\n{forecast}"
+                else:
+                    # Short text - keep it simple
+                    formatted_reasoning = f"## Analysis\n{reasoning}\n\n## Forecast\nBased on the analysis, the forecast is provided above."
+        
+        # FINAL CHECK: Ensure a "## Forecast" section exists (exact format)
+        if "## Forecast" not in formatted_reasoning:
+            # If still not present, add it explicitly
+            formatted_reasoning += "\n\n## Forecast\nThe forecast is derived from the analysis above."
         
         return formatted_reasoning
 

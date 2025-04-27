@@ -625,7 +625,10 @@ if __name__ == "__main__":
         "quarterly_cup",
         "test_questions",
     ], "Invalid run mode"
-
+    print(f"MY_PERSONAL_ANTHROPIC_KEY exists: {MY_PERSONAL_ANTHROPIC_KEY is not None}")
+    print(f"MY_PERSONAL_ANTHROPIC_KEY length: {len(MY_PERSONAL_ANTHROPIC_KEY or '')}")
+    print(f"OPENROUTER_API_KEY exists: {os.getenv('OPENROUTER_API_KEY') is not None}")
+    print(f"METACULUS_TOKEN exists: {METACULUS_TOKEN is not None}")
     template_bot = TemplateForecaster(
         research_reports_per_question=1,
         predictions_per_research_report=1,
@@ -635,11 +638,10 @@ if __name__ == "__main__":
         skip_previously_forecasted_questions=True,
         llms={
             "default": GeneralLlm(
-                model="anthropic/claude-3-5-haiku-20241022",
+                model="openrouter/anthropic/claude-3-5-haiku-20241022",
                 temperature=0.3,
                 timeout=120,
                 allowed_tries=2,
-                api_key=MY_PERSONAL_ANTHROPIC_KEY,
             )
         },
     )

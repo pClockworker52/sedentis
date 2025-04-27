@@ -454,14 +454,17 @@ The forecast is derived from the analysis above.
             """
         )
         reasoning = await self.get_llm("default", "llm").invoke(prompt)
-        
-        # Ensure forecast section exists
-        if "## Forecast" not in reasoning:
-            reasoning = self._format_forecast_with_sections(reasoning)
-            
+         
+        # --- ALWAYS FORMAT THE REASONING ---
+        logger.info("Applying mandatory formatting to reasoning...")
+        reasoning = self._format_forecast_with_sections(reasoning)
+        # Add debug log to see the result
+        logger.debug(f"Formatted Reasoning START:\n{reasoning[:500]}\nFormatted Reasoning END")
+        # --- Formatting done ---
+   
         prediction: PredictedOptionList = (
             PredictionExtractor.extract_option_list_with_percentage_afterwards(
-                reasoning, question.options
+                reasoning, question.options # Use formatted reasoning
             )
         )
         logger.info(
@@ -569,13 +572,16 @@ The forecast is derived from the analysis above.
         )
         reasoning = await self.get_llm("default", "llm").invoke(prompt)
         
-        # Ensure forecast section exists
-        if "## Forecast" not in reasoning:
-            reasoning = self._format_forecast_with_sections(reasoning)
-            
+        # --- ALWAYS FORMAT THE REASONING ---
+        logger.info("Applying mandatory formatting to reasoning...")
+        reasoning = self._format_forecast_with_sections(reasoning)
+        # Add debug log to see the result
+        logger.debug(f"Formatted Reasoning START:\n{reasoning[:500]}\nFormatted Reasoning END")
+        # --- Formatting done ---
+    
         prediction: NumericDistribution = (
             PredictionExtractor.extract_numeric_distribution_from_list_of_percentile_number_and_probability(
-                reasoning, question
+                reasoning, question # Use formatted reasoning
             )
         )
         logger.info(
@@ -683,47 +689,8 @@ if __name__ == "__main__":
             template_bot.forecast_questions(questions, return_exceptions=True)
         )
     
-    # With this implementation:
-    try:
-        # Try direct access first
-        for report in forecast_reports:
-            if hasattr(report, 'report_sections') and len(report.report_sections) > 0:
-                # Check if we have enough sections
-                if len(report.report_sections) <= 2:
-                    # We need to create a forecast section
-                    logger.info(f"Adding missing forecast section to report for {report.question.page_url}")
-                    if hasattr(report, 'explanation') and isinstance(report.explanation, str):
-                        # Add a forecast section to the explanation
-                        report.explanation += "\n\n## Forecast\nThis section contains forecast information."
-                else:
-                    # We have enough sections, but check if the third one has 'forecast' in the title
-                    forecast_section = report.report_sections[2]
-                    first_line = forecast_section.text_of_section_and_subsections.split("\n")[0]
-                    if "forecast" not in first_line.lower():
-                        # Need to fix the section header
-                        logger.info(f"Fixing forecast section header in report for {report.question.page_url}")
-                        if hasattr(report, 'explanation') and isinstance(report.explanation, str):
-                            # Find the section header in the explanation and replace it
-                            sections = report.explanation.split("##")
-                            if len(sections) > 3:  # We have at least 3 section headers
-                                # Replace the third section header with "Forecast"
-                                header = sections[3].split("\n", 1)[0]
-                                report.explanation = report.explanation.replace(
-                                    f"## {header}", 
-                                    "## Forecast"
-                                )
-                            else:
-                                # Append a new forecast section
-                                report.explanation += "\n\n## Forecast\nThis section contains forecast information."
-
-        
-        # Now try to run the report summary
-        TemplateForecaster.log_report_summary(forecast_reports)  # type: ignore
-    except ValueError as e:
-        logger.error(f"Error in log_report_summary: {e}")
-        # Fall back to manual logging
-        logger.info("Forecast Report Summary (manual fallback):")
-        for i, report in enumerate(forecast_reports):
-            logger.info(f"Report {i+1}: {report.question_url}")
-            if hasattr(report, 'prediction'):
-                logger.info(f"Prediction: {report.prediction}")
+    # After generating forecast_reports...
+    
+    logger.info("Attempting to log report summary...")
+    TemplateForecaster.log_report_summary(forecast_reports)
+    logger.info("Report summary logging complete (or attempted).")

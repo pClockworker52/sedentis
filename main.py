@@ -243,18 +243,16 @@ This section contains forecast information that will be processed in the next st
                 (c) A brief description of a scenario that results in a No outcome.
                 (d) A brief description of a scenario that results in a Yes outcome.
                 
-                **MANDATORY FORMATTING INSTRUCTIONS:**
-                YOU MUST FORMAT YOUR ANSWER WITH THESE EXACT SECTIONS:
+                **MANDATORY OUTPUT FORMAT:**
                 
-                ## Analysis
-                This section will contain your detailed reasoning.
+                # Summary
+                Brief summary of your forecast.
                 
-                ## Forecast
-                This section will contain your final probability assessment.
+                # Research
+                Analysis of the research provided.
                 
-                The last line must be formatted exactly as: "Probability: ZZ%" where ZZ is a number between 0 and 100.
-                
-                DO NOT MODIFY THESE SECTION TITLES OR ADD ADDITIONAL SECTIONS.
+                # Forecast
+                Your final probability assessment.
                 
                 **Forecasting Instructions:**
                 
@@ -278,7 +276,12 @@ This section contains forecast information that will be processed in the next st
                    - Catastrophic failures of complexity (X)
                    - Uncontrollable resistance from human agents (P)
                 
-                YOUR RESPONSE MUST BEGIN WITH "## Analysis" AND INCLUDE "## Forecast" EXACTLY AS SPECIFIED.
+                The last line in the Forecast section must be exactly: "Probability: ZZ%" where ZZ is a number between 0 and 100.
+                
+                YOUR RESPONSE MUST INCLUDE THESE EXACT SECTION HEADERS:
+                # Summary
+                # Research
+                # Forecast
                 """
             )
             logger.info(f"About to call LLM with prompt length: {len(prompt)}")

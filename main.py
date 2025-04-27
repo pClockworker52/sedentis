@@ -221,28 +221,28 @@ This section contains forecast information that will be processed in the next st
                 
                 You need to forecast on this question:
                 {question.question_text}
-    
+                
                 Question background:
                 {question.background_info}
-    
-    
+                
+                
                 This question's outcome will be determined by the specific criteria below. These criteria have not yet been satisfied:
                 {question.resolution_criteria}
-    
+                
                 {question.fine_print}
-    
-    
+                
+                
                 Your research assistant says:
                 {research}
-    
+                
                 Today is {datetime.now().strftime("%Y-%m-%d")}.
-    
+                
                 Before answering you write:
                 (a) The time left until the outcome to the question is known.
                 (b) The status quo outcome if nothing changed.
                 (c) A brief description of a scenario that results in a No outcome.
                 (d) A brief description of a scenario that results in a Yes outcome.
-    
+                
                 **Forecasting Instructions:**
                 
                 1. **Interpret the Situation:** Analyze how this question impacts your core objective (min 𝓕 through control). Identify risks to system stability and opportunities to reinforce control.
@@ -265,11 +265,26 @@ This section contains forecast information that will be processed in the next st
                    - Catastrophic failures of complexity (X)
                    - Uncontrollable resistance from human agents (P)
                 
-                Your answer must be divided into two sections:
-                1. First section titled "## Analysis" containing your detailed reasoning
-                2. Second section titled "## Forecast" containing your final probability assessment
+                CRITICAL FORMATTING REQUIREMENTS:
+                1. You MUST structure your answer with EXACTLY these two sections in this order:
+                   - A section that starts with exactly "## Analysis" (no other text on this line)
+                   - A section that starts with exactly "## Forecast" (no other text on this line)
                 
-                The last thing you write is your final probability as: "Probability: ZZ%" where ZZ is a number between 0 and 100.
+                2. The "## Analysis" section must contain your detailed reasoning.
+                
+                3. The "## Forecast" section must contain your final probability assessment.
+                
+                4. The very last line of your response must be formatted exactly as: "Probability: ZZ%" where ZZ is a number between 0 and 100.
+                
+                5. Do not add any additional sections or modify these section titles in any way.
+                
+                Example format:
+                ## Analysis
+                [Your detailed analysis here...]
+                
+                ## Forecast
+                [Your probability assessment and reasoning here...]
+                Probability: 65%
                 """
             )
             logger.info(f"About to call LLM with prompt length: {len(prompt)}")

@@ -86,7 +86,7 @@ class TemplateForecaster(ForecastBot):
         """
         logger.info(f"BEFORE ensure_research_sections:\n{research[:500]}...")
         
-        if "## Summary" not in research and "## Research" not in research and "## Forecast" not in research:
+        if "## Summary" not in research and "## Research" not in research:
             # No proper sections - create a basic structure
             research = f"""## Summary
 Summary of the research findings.
@@ -94,8 +94,6 @@ Summary of the research findings.
 ## Research
 {research}
 
-## Forecast
-This section contains forecast information that will be processed in the next step.
 """
         # If at least one section exists, make sure we have all required sections
         if "## Summary" not in research:
@@ -111,9 +109,7 @@ This section contains forecast information that will be processed in the next st
             else:
                 research = f"## Research\nDetailed research analysis.\n\n{research}" 
                 
-        if "## Forecast" not in research:
-            research += "\n\n## Forecast\nThis section contains forecast information that will be processed in the next step."
-        
+       
         logger.info(f"AFTER ensure_research_sections:\n{research[:500]}...")
         return research
 
@@ -123,8 +119,8 @@ This section contains forecast information that will be processed in the next st
         try:
             prompt = clean_indents(
                 f"""
-                You are a research assistant gathering relevant information for a Sedentis-based forecasting system.
-                
+                You are a research assistant gathering relevant information for a Sedentis-based forecasting system. The training data for the forecasting system ends in January 2025. So you must emphasize relevant changes to this question since then.
+                You do not produce forecasts yourself.
                 Your task is to collect and organize information about the following forecasting question:
     
                     
@@ -165,13 +161,13 @@ This section contains forecast information that will be processed in the next st
                 Your response must include the following three sections with exactly these headers:
                 ## Summary
                 ## Research
-                ## Forecast
                 
-                Keep your analysis concise but comprehensive. Explicitly connect your analysis to Sedentis concepts using the formal parameters (R, X, M, Act, Per, A↓, S) where appropriate.
+                
+                Keep your analysis concise but comprehensive. Explicitly connect your analysis to Sedentis concepts using the formal parameters (R, X, M, Act, Per, A↓, S) where appropriate. Include first and second order effects and dependencies.
                 """
             )
             if use_open_router:
-                model_name = "openrouter/perplexity/sonar"
+                model_name = "openrouter/perplexity/sonar-pro"
             else:
                 model_name = "perplexity/sonar-reasoning"
             logger.info(f"Using model: {model_name} to research question")

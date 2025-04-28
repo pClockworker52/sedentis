@@ -173,7 +173,7 @@ Summary of the research findings.
             logger.info(f"Using model: {model_name} to research question")
             model = GeneralLlm(
                 model=model_name,
-                temperature=0.1,
+                temperature=0.2,
             )
             
             logger.info(f"About to call model.invoke with prompt length: {len(prompt)}")
@@ -697,8 +697,8 @@ if __name__ == "__main__":
     ], "Invalid run mode"
 
     template_bot = TemplateForecaster(
-        research_reports_per_question=1,
-        predictions_per_research_report=1,
+        research_reports_per_question=2,
+        predictions_per_research_report=2,
         use_research_summary_to_forecast=False,
         publish_reports_to_metaculus=True,
         folder_to_save_reports_to=None,

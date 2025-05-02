@@ -238,6 +238,7 @@ Summary of the research findings.
                 (d) A brief description of a scenario that results in a Yes outcome.
                 
                 **Forecasting Instructions:**
+                When applying Sedentis analysis, ensure your interpretation accounts for observed system trajectories, including contraction patterns when maintenance costs (M) exceed available resources (R). System inertia (A↓) often maintains established trends, requiring significant energy inputs to reverse direction.
                 
                 1. **Interpret the Situation:** Analyze how this question impacts your core objective (min 𝓕 through control). Identify risks to system stability and opportunities to reinforce control.
                 
@@ -387,6 +388,8 @@ Summary of the research findings.
 
             **Forecasting Instructions:**
             
+            When applying Sedentis analysis, ensure your interpretation accounts for observed system trajectories, including contraction patterns when maintenance costs (M) exceed available resources (R). System inertia (A↓) often maintains established trends, requiring significant energy inputs to reverse direction.
+            
             1. **Interpret Each Option:** Analyze each option through the Sedentis lens. How would each option impact:
                - System stability and predictability (𝓕)
                - Resource flows and security (R)
@@ -488,6 +491,8 @@ Summary of the research findings.
             (f) A brief description of an unexpected scenario that results in a high outcome.
 
             **Forecasting Instructions:**
+            
+            When applying Sedentis analysis, ensure your interpretation accounts for observed system trajectories, including contraction patterns when maintenance costs (M) exceed available resources (R). System inertia (A↓) often maintains established trends, requiring significant energy inputs to reverse direction.
             
             1. **Analyze Numeric Range Significance:** What do different values in this range represent in terms of:
                - System stability and control (𝓕)

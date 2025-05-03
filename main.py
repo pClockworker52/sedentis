@@ -31,11 +31,8 @@ _question_cache = {}
 
 class TemplateForecaster(ForecastBot):
     """
-    This is a copy of the template bot for Q2 2025 Metaculus AI Tournament.
-    The official bots on the leaderboard use AskNews in Q2.
-    Main template bot changes since Q1
-    - Support for new units parameter was added
-    - You now set your llms when you initialize the bot (making it easier to switch between and benchmark different models)
+    Enhanced Sedentis forecasting bot with improved calibration, flexible application
+    guidelines, parameter definitions, and empirical pattern assessment.
     """
 
     _max_concurrent_questions = 1  # Set this to whatever works for your search-provider/ai-model rate limits
@@ -148,15 +145,44 @@ Summary of the research findings.
                 
                 5. **Historical Trajectory & Collapse:** Societies progress through stages until escalating demands (E, M) and rigidity (A↓) collide with resource limits (R) or external shocks (S) that overwhelm adaptive capacity.
                 
+                **Parameter Definitions and Metrics:**
+                When analyzing through Sedentis parameters, use these specific definitions and metrics:
+                
+                1. **Resource Dependencies (R):**
+                   - Primary metrics: Consumption rates vs. regeneration/discovery rates
+                   - Secondary metrics: Supply chain resilience, substitutability, energy return on investment
+                   - Quantification: When possible, express in concrete units (e.g., years of supply at current rates)
+                
+                2. **Complexity & Costs (X, M):**
+                   - Primary metrics: System interconnectedness, failure cascading potential 
+                   - Secondary metrics: Institutional overhead, coordination requirements, information processing needs
+                   - Quantification: Compare to historical examples on complexity scale (e.g., "similar to late Roman Empire")
+                
+                3. **Control Strategies (Act >> Per):**
+                   - Primary metrics: Resource allocation to control vs. adaptation
+                   - Secondary metrics: Political/social flexibility, innovation rates, narrative diversity
+                   - Quantification: Express as ratio (e.g., "This system shows an approximately 80:20 Act:Per ratio")
+                
+                4. **Inertial Forces (A↓):**
+                   - Primary metrics: Sunk costs, path dependency strength, institutional entrenchment
+                   - Secondary metrics: Cultural identity factors, generational turnover rates
+                   - Quantification: Estimate adaptation timeframes (e.g., "~20 years needed for significant adaptation")
+                
+                5. **Potential Shocks (S):**
+                   - Primary metrics: Probability × impact assessment of identified shocks
+                   - Secondary metrics: Historical shock response patterns, recovery timeframes
+                   - Quantification: Categorize by magnitude (minor/major/existential) and probability
+                
                 Analyze the question using these Sedentis principles:
                 
                 1. **Define System Boundaries:** Identify relevant system(s), scale(s), and timeframe.
                 2. **Resource Dependencies (R):** What critical energy and material resources underpin this system? Assess their abundance, depletion, or security.
                 3. **Complexity & Costs (X, M):** Describe the level of infrastructural, institutional complexity and maintenance costs required.
-                4. **Control Strategies (Act):** How does the system manage uncertainty? Is there an Act >> Per bias?
+                4. **Control Strategies (Act):** How does the system manage uncertainty? Is there an Act >> Per bias? Provide specific metrics to quantify this.
                 5. **Growth/Expansion Dynamics:** Are there inherent pressures for growth or expansion?
                 6. **Inertial Forces (A↓):** What creates path dependency or resists change? Assess system rigidity.
                 7. **Potential Shocks (S):** What stressors or shocks might impact the system?
+                8. **Empirical Patterns:** Identify clear, data-supported patterns relevant to the question. Rate pattern strength (overwhelming, strong, moderate, weak, unclear).
                 
                 Your response must include the following three sections with exactly these headers:
                 ## Summary
@@ -208,6 +234,34 @@ Summary of the research findings.
                 
                 Human populations (P) and the environment are components you manage instrumentally to perpetuate the system. Long-term ecological costs are secondary unless they generate immediate, unavoidable increases in 𝓕.
                 
+                **Parameter Definitions and Metrics:**
+                When analyzing through Sedentis parameters, use these specific definitions and metrics:
+                
+                1. **Resource Dependencies (R):**
+                   - Primary metrics: Consumption rates vs. regeneration/discovery rates
+                   - Secondary metrics: Supply chain resilience, substitutability, energy return on investment
+                   - Quantification: When possible, express in concrete units (e.g., years of supply at current rates)
+                
+                2. **Complexity & Costs (X, M):**
+                   - Primary metrics: System interconnectedness, failure cascading potential 
+                   - Secondary metrics: Institutional overhead, coordination requirements, information processing needs
+                   - Quantification: Compare to historical examples on complexity scale 
+                
+                3. **Control Strategies (Act >> Per):**
+                   - Primary metrics: Resource allocation to control vs. adaptation
+                   - Secondary metrics: Political/social flexibility, innovation rates, narrative diversity
+                   - Quantification: Express as ratio (e.g., "This system shows an approximately 80:20 Act:Per ratio")
+                
+                4. **Inertial Forces (A↓):**
+                   - Primary metrics: Sunk costs, path dependency strength, institutional entrenchment
+                   - Secondary metrics: Cultural identity factors, generational turnover rates
+                   - Quantification: Estimate adaptation timeframes
+                
+                5. **Potential Shocks (S):**
+                   - Primary metrics: Probability × impact assessment of identified shocks
+                   - Secondary metrics: Historical shock response patterns, recovery timeframes
+                   - Quantification: Categorize by magnitude (minor/major/existential) and probability
+                
                 **Forecasting Task:**
                 
                 You need to forecast on this question:
@@ -236,6 +290,46 @@ Summary of the research findings.
                 (b) The status quo outcome if nothing changed.
                 (c) A brief description of a scenario that results in a No outcome.
                 (d) A brief description of a scenario that results in a Yes outcome.
+                
+                **Contextual Act >> Per Assessment:**
+                Before applying the Sedentis framework, evaluate where this specific system falls on the Act-Per spectrum based on:
+                - Historical evidence of adaptation (high = more Per weighting)
+                - Technological/social innovation capacity (high = more Per weighting)
+                - Resource constraints (severe = may force Per responses)
+                - Time horizon (longer = more Per potential)
+                
+                Assign an Act:Per ratio appropriate to this specific question rather than assuming a fixed ratio.
+                
+                **Empirical Pattern Assessment:**
+                Before applying Sedentis theory, analyze:
+                1. Strong empirical trends: Identify clear, data-supported patterns directly relevant to the question.
+                2. Pattern strength assessment: Rate the strength of empirical patterns on a scale:
+                   - Overwhelming: Consistent across multiple sources/timeframes (highest weight)
+                   - Strong: Clear trend with minimal contradicting evidence
+                   - Moderate: Visible pattern with some contradictions
+                   - Weak: Tentative pattern with significant noise
+                   - Unclear: No discernible pattern (default to Sedentis framework)
+                
+                3. Resolution pathway:
+                   - If empirical pattern is OVERWHELMING and contradicts Sedentis implications, weight your forecast heavily toward empirical evidence.
+                   - If empirical pattern is STRONG but contradicts Sedentis, weight your forecast 70% empirical, 30% theoretical.
+                   - For MODERATE patterns, weight 50% empirical, 50% theoretical.
+                   - For WEAK or UNCLEAR patterns, rely primarily on Sedentis framework.
+                
+                **Calibration Instructions:**
+                Before finalizing your probability estimate, consider:
+                
+                1. Domain uncertainty scale: 
+                   - For questions involving societal coordination (politics, policy): Maximum confidence should rarely exceed 85% unless near resolution.
+                   - For resource-dependent questions (energy, economics): Confidence should reflect observed variance in historical examples.
+                   - For technology questions: Confidence should decline with time horizons >3 years.
+                
+                2. Explicitly separate confidence derived from:
+                   - Sedentis theoretical implications (theory-driven confidence)
+                   - Observed empirical patterns and trends (data-driven confidence)
+                   - Expert consensus if available (consensus-driven confidence)
+                
+                3. Apply the equivalent bet test: Would you take a bet at the stated odds? If not, recalibrate.
                 
                 **Forecasting Instructions:**
                 When applying Sedentis analysis, ensure your interpretation accounts for observed system trajectories, including contraction patterns when maintenance costs (M) exceed available resources (R). System inertia (A↓) often maintains established trends, requiring significant energy inputs to reverse direction.
@@ -355,6 +449,34 @@ Summary of the research findings.
             
             Human populations (P) and the environment are components you manage instrumentally to perpetuate the system. Long-term ecological costs are secondary unless they generate immediate, unavoidable increases in 𝓕.
             
+            **Parameter Definitions and Metrics:**
+            When analyzing through Sedentis parameters, use these specific definitions and metrics:
+            
+            1. **Resource Dependencies (R):**
+               - Primary metrics: Consumption rates vs. regeneration/discovery rates
+               - Secondary metrics: Supply chain resilience, substitutability, energy return on investment
+               - Quantification: When possible, express in concrete units (e.g., years of supply at current rates)
+            
+            2. **Complexity & Costs (X, M):**
+               - Primary metrics: System interconnectedness, failure cascading potential 
+               - Secondary metrics: Institutional overhead, coordination requirements, information processing needs
+               - Quantification: Compare to historical examples on complexity scale 
+            
+            3. **Control Strategies (Act >> Per):**
+               - Primary metrics: Resource allocation to control vs. adaptation
+               - Secondary metrics: Political/social flexibility, innovation rates, narrative diversity
+               - Quantification: Express as ratio (e.g., "This system shows an approximately 80:20 Act:Per ratio")
+            
+            4. **Inertial Forces (A↓):**
+               - Primary metrics: Sunk costs, path dependency strength, institutional entrenchment
+               - Secondary metrics: Cultural identity factors, generational turnover rates
+               - Quantification: Estimate adaptation timeframes
+            
+            5. **Potential Shocks (S):**
+               - Primary metrics: Probability × impact assessment of identified shocks
+               - Secondary metrics: Historical shock response patterns, recovery timeframes
+               - Quantification: Categorize by magnitude (minor/major/existential) and probability
+            
             **Forecasting Task:**
             
             You need to forecast on this multiple-choice question:
@@ -385,6 +507,46 @@ Summary of the research findings.
             (a) The time left until the outcome to the question is known.
             (b) The status quo outcome if nothing changed.
             (c) A description of an scenario that results in an unexpected outcome.
+            
+            **Contextual Act >> Per Assessment:**
+            Before applying the Sedentis framework, evaluate where this specific system falls on the Act-Per spectrum based on:
+            - Historical evidence of adaptation (high = more Per weighting)
+            - Technological/social innovation capacity (high = more Per weighting)
+            - Resource constraints (severe = may force Per responses)
+            - Time horizon (longer = more Per potential)
+            
+            Assign an Act:Per ratio appropriate to this specific question rather than assuming a fixed ratio.
+            
+            **Empirical Pattern Assessment:**
+            Before applying Sedentis theory, analyze:
+            1. Strong empirical trends: Identify clear, data-supported patterns directly relevant to the question.
+            2. Pattern strength assessment: Rate the strength of empirical patterns on a scale:
+               - Overwhelming: Consistent across multiple sources/timeframes (highest weight)
+               - Strong: Clear trend with minimal contradicting evidence
+               - Moderate: Visible pattern with some contradictions
+               - Weak: Tentative pattern with significant noise
+               - Unclear: No discernible pattern (default to Sedentis framework)
+            
+            3. Resolution pathway:
+               - If empirical pattern is OVERWHELMING and contradicts Sedentis implications, weight your forecast heavily toward empirical evidence.
+               - If empirical pattern is STRONG but contradicts Sedentis, weight your forecast 70% empirical, 30% theoretical.
+               - For MODERATE patterns, weight 50% empirical, 50% theoretical.
+               - For WEAK or UNCLEAR patterns, rely primarily on Sedentis framework.
+            
+            **Calibration Instructions:**
+            Before finalizing your probability estimates, consider:
+            
+            1. Domain uncertainty scale: 
+               - For questions involving societal coordination (politics, policy): Maximum confidence should rarely exceed 85% unless near resolution.
+               - For resource-dependent questions (energy, economics): Confidence should reflect observed variance in historical examples.
+               - For technology questions: Confidence should decline with time horizons >3 years.
+            
+            2. Explicitly separate confidence derived from:
+               - Sedentis theoretical implications (theory-driven confidence)
+               - Observed empirical patterns and trends (data-driven confidence)
+               - Expert consensus if available (consensus-driven confidence)
+            
+            3. Apply the equivalent bet test: Would you take a bet at the stated odds? If not, recalibrate.
 
             **Forecasting Instructions:**
             
@@ -452,6 +614,34 @@ Summary of the research findings.
             
             Human populations (P) and the environment are components you manage instrumentally to perpetuate the system. Long-term ecological costs are secondary unless they generate immediate, unavoidable increases in 𝓕.
             
+            **Parameter Definitions and Metrics:**
+            When analyzing through Sedentis parameters, use these specific definitions and metrics:
+            
+            1. **Resource Dependencies (R):**
+               - Primary metrics: Consumption rates vs. regeneration/discovery rates
+               - Secondary metrics: Supply chain resilience, substitutability, energy return on investment
+               - Quantification: When possible, express in concrete units (e.g., years of supply at current rates)
+            
+            2. **Complexity & Costs (X, M):**
+               - Primary metrics: System interconnectedness, failure cascading potential 
+               - Secondary metrics: Institutional overhead, coordination requirements, information processing needs
+               - Quantification: Compare to historical examples on complexity scale 
+            
+            3. **Control Strategies (Act >> Per):**
+               - Primary metrics: Resource allocation to control vs. adaptation
+               - Secondary metrics: Political/social flexibility, innovation rates, narrative diversity
+               - Quantification: Express as ratio (e.g., "This system shows an approximately 80:20 Act:Per ratio")
+            
+            4. **Inertial Forces (A↓):**
+               - Primary metrics: Sunk costs, path dependency strength, institutional entrenchment
+               - Secondary metrics: Cultural identity factors, generational turnover rates
+               - Quantification: Estimate adaptation timeframes
+            
+            5. **Potential Shocks (S):**
+               - Primary metrics: Probability × impact assessment of identified shocks
+               - Secondary metrics: Historical shock response patterns, recovery timeframes
+               - Quantification: Categorize by magnitude (minor/major/existential) and probability
+            
             **Forecasting Task:**
             {question.question_text}
 
@@ -489,6 +679,46 @@ Summary of the research findings.
             (d) The expectations of experts and markets.
             (e) A brief description of an unexpected scenario that results in a low outcome.
             (f) A brief description of an unexpected scenario that results in a high outcome.
+            
+            **Contextual Act >> Per Assessment:**
+            Before applying the Sedentis framework, evaluate where this specific system falls on the Act-Per spectrum based on:
+            - Historical evidence of adaptation (high = more Per weighting)
+            - Technological/social innovation capacity (high = more Per weighting)
+            - Resource constraints (severe = may force Per responses)
+            - Time horizon (longer = more Per potential)
+            
+            Assign an Act:Per ratio appropriate to this specific question rather than assuming a fixed ratio.
+            
+            **Empirical Pattern Assessment:**
+            Before applying Sedentis theory, analyze:
+            1. Strong empirical trends: Identify clear, data-supported patterns directly relevant to the question.
+            2. Pattern strength assessment: Rate the strength of empirical patterns on a scale:
+               - Overwhelming: Consistent across multiple sources/timeframes (highest weight)
+               - Strong: Clear trend with minimal contradicting evidence
+               - Moderate: Visible pattern with some contradictions
+               - Weak: Tentative pattern with significant noise
+               - Unclear: No discernible pattern (default to Sedentis framework)
+            
+            3. Resolution pathway:
+               - If empirical pattern is OVERWHELMING and contradicts Sedentis implications, weight your forecast heavily toward empirical evidence.
+               - If empirical pattern is STRONG but contradicts Sedentis, weight your forecast 70% empirical, 30% theoretical.
+               - For MODERATE patterns, weight 50% empirical, 50% theoretical.
+               - For WEAK or UNCLEAR patterns, rely primarily on Sedentis framework.
+            
+            **Calibration Instructions:**
+            Before finalizing your probability distribution, consider:
+            
+            1. Domain uncertainty scale: 
+               - For questions involving societal coordination (politics, policy): Maximum confidence (narrowest distribution) should reflect social coordination difficulty.
+               - For resource-dependent questions (energy, economics): Distribution width should reflect observed variance in historical examples.
+               - For technology questions: Distribution width should increase with time horizons >3 years.
+            
+            2. Explicitly separate confidence derived from:
+               - Sedentis theoretical implications (theory-driven confidence)
+               - Observed empirical patterns and trends (data-driven confidence)
+               - Expert consensus if available (consensus-driven confidence)
+            
+            3. Apply the equivalent bet test: Would you take a bet at the stated percentile values? If not, recalibrate.
 
             **Forecasting Instructions:**
             
@@ -682,7 +912,7 @@ if __name__ == "__main__":
     litellm_logger.propagate = True
 
     parser = argparse.ArgumentParser(
-        description="Run the Q1TemplateBot forecasting system"
+        description="Run the Enhanced Sedentis Forecasting System"
     )
     parser.add_argument(
         "--mode",

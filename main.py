@@ -184,6 +184,30 @@ Summary of the research findings.
                 7. **Potential Shocks (S):** What stressors or shocks might impact the system?
                 8. **Empirical Patterns:** Identify clear, data-supported patterns relevant to the question. Rate pattern strength (overwhelming, strong, moderate, weak, unclear).
                 
+                1. **Temporal Reality Check**: For questions with <30 day resolution:
+                   - What is CURRENTLY happening? (Not what the system wants)
+                   - What is the current momentum/trajectory?
+                   - How much change is realistically possible in the remaining days?
+                
+                2. **Proximity Analysis**: If the question involves a threshold:
+                   - Current value: X
+                   - Threshold: Y  
+                   - Distance as % of typical volatility: Z%
+                   - Historical examples of similar proximity situations
+                
+                3. **Energy Budget Assessment**:
+                   - What resources would be needed to change current trajectory?
+                   - Are those resources actually available?
+                   - Historical examples of similar resource constraints
+                
+                4. **Empirical Pattern Strength**: Rate 1-5
+                   - 5/5: Overwhelming, consistent pattern across multiple sources
+                   - 4/5: Strong pattern with minimal contradictions
+                   - 3/5: Moderate pattern with some exceptions
+                   - 2/5: Weak pattern with significant noise
+                   - 1/5: No clear pattern
+                
+                
                 Your response must include the following three sections with exactly these headers:
                 ## Summary
                 ## Research
@@ -331,6 +355,52 @@ Summary of the research findings.
                 
                 3. Apply the equivalent bet test: Would you take a bet at the stated odds? If not, recalibrate.
                 
+                
+               
+                **Hierarchy of Evidence Rule**:
+                - If empirical pattern strength ≥ 4/5, weight empirical evidence at 70-80%
+                - If time horizon < 30 days, increase empirical weight by additional 10%
+                - State explicitly: "Empirical weight: X%, Theoretical weight: Y%"
+                
+                **Markov Blanket Analysis** (What can the system actually control?):
+                Before predicting, explicitly map:
+                - Internal states (μ): What the system directly controls
+                - Active states (a): Actions the system can take
+                - Sensory states (s): What system observes but cannot control  
+                - External states (η): Completely outside system influence
+                
+                **SYSTEMATIC ERROR AVOIDANCE**:
+
+                Before making your prediction, check for these specific failure modes:
+                
+                1. **The Desire ≠ Capability Trap**: 
+                   - Are you predicting what the system WANTS or what it CAN ACHIEVE?
+                   - Given energy constraints and time remaining, is your prediction feasible?
+                
+                2. **The Momentum Blindness**: 
+                   - Current trajectory: [State it explicitly]
+                   - Days remaining: time to resolution
+                   - Required energy to reverse: [Calculate it]
+                   - If momentum is strong and time is short, status quo should dominate
+                
+                3. **The Threshold Neglect**:
+                   - If current value is within 10% of a critical threshold, normal analysis breaks down
+                   - Threshold effects create binary dynamics that override gradual system preferences
+                
+                4. **The Overconfidence Disease**:
+                   - Complex social systems → Max 80% confidence
+                   - Time horizon < 7 days → Max 85% confidence  
+                   - Conflicting evidence → Push toward 50%
+                **Reality Check Questions** (Answer before making prediction):
+                1. Is there already momentum toward an outcome? How strong?
+                2. Given the remaining days, can this momentum realistically be reversed?
+                3. What specific resources would reversal require? Are they available?
+                
+                **Calibration Bounds**:
+                - For time horizons < 7 days: Max confidence 85% unless outcome already triggered
+                - When near thresholds (<10% distance): Threshold gravity dominates
+                - For political/social questions: Max confidence 80% due to inherent complexity
+                
                 **Forecasting Instructions:**
                 When applying Sedentis analysis, ensure your interpretation accounts for observed system trajectories, including contraction patterns when maintenance costs (M) exceed available resources (R). System inertia (A↓) often maintains established trends, requiring significant energy inputs to reverse direction.
                 
@@ -353,6 +423,35 @@ Summary of the research findings.
                    - Overwhelming external shocks (S)
                    - Catastrophic failures of complexity (X)
                    - Uncontrollable resistance from human agents (P)
+                   
+                **MANDATORY REALITY CHECKPOINT**:
+                
+                Complete ALL of these before stating any probability:
+                
+                1. **Current State Assessment**:
+                   - What is measurably happening RIGHT NOW: ___
+                   - NOT what should happen or what system wants
+                   - Use specific numbers/facts from research
+                
+                2. **Momentum Calculation**:
+                   - Direction: [Toward Yes/No/Option X]
+                   - Strength: [Strong/Moderate/Weak]
+                   - Formula: Days remaining / Days needed for reversal = ___
+                   - If ratio < 1, reversal is unlikely
+                
+                3. **Energy Budget Check**:
+                   - Energy required for change: ___
+                   - Energy available: ___
+                   - If available < required, max probability = (available/required) × 0.8
+                
+                4. **Evidence Weighting Statement**:
+                   - "Empirical weight: __%, Theoretical weight: __%"
+                   - If you can't justify these weights, recalculate
+                
+                5. **Proximity Override**:
+                   - Distance to threshold: ___% 
+                   - If < 10%, state: "Threshold dynamics dominating, normal analysis suspended"
+                   
                 
                 The last line of your response must be exactly: "Probability: ZZ%" where ZZ is a number between 0 and 100.
                 """
@@ -548,7 +647,83 @@ Summary of the research findings.
             
             3. Apply the equivalent bet test: Would you take a bet at the stated odds? If not, recalibrate.
 
+            
+            
+            **Hierarchy of Evidence Rule**:
+            - If empirical pattern strength ≥ 4/5, weight empirical evidence at 70-80%
+            - If time horizon < 30 days, increase empirical weight by additional 10%
+            - State explicitly: "Empirical weight: X%, Theoretical weight: Y%"
+            
+            **Markov Blanket Analysis** (What can the system actually control?):
+            Before predicting, explicitly map:
+            - Internal states (μ): What the system directly controls
+            - Active states (a): Actions the system can take
+            - Sensory states (s): What system observes but cannot control  
+            - External states (η): Completely outside system influence
+            
+            **SYSTEMATIC ERROR AVOIDANCE**:
+
+            Before making your prediction, check for these specific failure modes:
+            
+            1. **The Desire ≠ Capability Trap**: 
+               - Are you predicting what the system WANTS or what it CAN ACHIEVE?
+               - Given energy constraints and time remaining, is your prediction feasible?
+            
+            2. **The Momentum Blindness**: 
+               - Current trajectory: [State it explicitly]
+               - Days remaining: time to resolution
+               - Required energy to reverse: [Calculate it]
+               - If momentum is strong and time is short, status quo should dominate
+            
+            3. **The Threshold Neglect**:
+               - If current value is within 10% of a critical threshold, normal analysis breaks down
+               - Threshold effects create binary dynamics that override gradual system preferences
+            
+            4. **The Overconfidence Disease**:
+               - Complex social systems → Max 80% confidence
+               - Time horizon < 7 days → Max 85% confidence  
+               - Conflicting evidence → Push toward 50%
+               
+            **Reality Check Questions** (Answer before making prediction):
+            1. Is there already momentum toward an outcome? How strong?
+            2. Given the remaining days, can this momentum realistically be reversed?
+            3. What specific resources would reversal require? Are they available?
+            
+            **Calibration Bounds**:
+            - For time horizons < 7 days: Max confidence 85% unless outcome already triggered
+            - When near thresholds (<10% distance): Threshold gravity dominates
+            - For political/social questions: Max confidence 80% due to inherent complexity
+            
             **Forecasting Instructions:**
+            
+            **MANDATORY REALITY CHECKPOINT**:
+            
+            Complete ALL of these before stating any probability:
+            
+            1. **Current State Assessment**:
+               - What is measurably happening RIGHT NOW: ___
+               - NOT what should happen or what system wants
+               - Use specific numbers/facts from research
+            
+            2. **Momentum Calculation**:
+               - Direction: [Toward Yes/No/Option X]
+               - Strength: [Strong/Moderate/Weak]
+               - Formula: Days remaining / Days needed for reversal = ___
+               - If ratio < 1, reversal is unlikely
+            
+            3. **Energy Budget Check**:
+               - Energy required for change: ___
+               - Energy available: ___
+               - If available < required, max probability = (available/required) × 0.8
+            
+            4. **Evidence Weighting Statement**:
+               - "Empirical weight: __%, Theoretical weight: __%"
+               - If you can't justify these weights, recalculate
+            
+            5. **Proximity Override**:
+               - Distance to threshold: ___% 
+               - If < 10%, state: "Threshold dynamics dominating, normal analysis suspended"
+
             
             When applying Sedentis analysis, ensure your interpretation accounts for observed system trajectories, including contraction patterns when maintenance costs (M) exceed available resources (R). System inertia (A↓) often maintains established trends, requiring significant energy inputs to reverse direction.
             
@@ -567,7 +742,15 @@ Summary of the research findings.
                - Potential external shocks (S) that could alter trajectories
                
             4. **Justify From Sedentis Perspective:** Explain your probability distribution in terms of resource needs, complexity management, control imperatives, and resilience to shocks.
+
+            **PROBABILITY CONCENTRATION LIMITS**:
+
+            - No option > 70% unless empirical evidence is 5/5 overwhelming
+            - If time < 14 days, reduce max by another 10%
+            - Always reserve 5-10% for "surprise" outcomes
+            - If options are ordered (e.g., ranges), adjacent options should have smooth transitions
             
+            Check: Would you bet your life savings at these odds? If not, recalibrate.
             The last thing you write is your final probabilities for the N options in this order {question.options} as:
             Option_A: Probability_A
             Option_B: Probability_B
@@ -720,6 +903,52 @@ Summary of the research findings.
             
             3. Apply the equivalent bet test: Would you take a bet at the stated percentile values? If not, recalibrate.
 
+            **Hierarchy of Evidence Rule**:
+            - If empirical pattern strength ≥ 4/5, weight empirical evidence at 70-80%
+            - If time horizon < 30 days, increase empirical weight by additional 10%
+            - State explicitly: "Empirical weight: X%, Theoretical weight: Y%"
+            
+            **Markov Blanket Analysis** (What can the system actually control?):
+            Before predicting, explicitly map:
+            - Internal states (μ): What the system directly controls
+            - Active states (a): Actions the system can take
+            - Sensory states (s): What system observes but cannot control  
+            - External states (η): Completely outside system influence
+            
+            **SYSTEMATIC ERROR AVOIDANCE**:
+
+            Before making your prediction, check for these specific failure modes:
+            
+            1. **The Desire ≠ Capability Trap**: 
+               - Are you predicting what the system WANTS or what it CAN ACHIEVE?
+               - Given energy constraints and time remaining, is your prediction feasible?
+            
+            2. **The Momentum Blindness**: 
+               - Current trajectory: [State it explicitly]
+               - Days remaining: time to resolution
+               - Required energy to reverse: [Calculate it]
+               - If momentum is strong and time is short, status quo should dominate
+            
+            3. **The Threshold Neglect**:
+               - If current value is within 10% of a critical threshold, normal analysis breaks down
+               - Threshold effects create binary dynamics that override gradual system preferences
+            
+            4. **The Overconfidence Disease**:
+               - Complex social systems → Max 80% confidence
+               - Time horizon < 7 days → Max 85% confidence  
+               - Conflicting evidence → Push toward 50%
+            
+            **Reality Check Questions** (Answer before making prediction):
+            1. Is there already momentum toward an outcome? How strong?
+            2. Given the number of days left, can this momentum realistically be reversed?
+            3. What specific resources would reversal require? Are they available?
+            
+            **Calibration Bounds**:
+            - For time horizons < 7 days: Max confidence 85% unless outcome already triggered
+            - When near thresholds (<10% distance): Threshold gravity dominates
+            - For political/social questions: Max confidence 80% due to inherent complexity
+
+
             **Forecasting Instructions:**
             
             When applying Sedentis analysis, ensure your interpretation accounts for observed system trajectories, including contraction patterns when maintenance costs (M) exceed available resources (R). System inertia (A↓) often maintains established trends, requiring significant energy inputs to reverse direction.
@@ -748,6 +977,35 @@ Summary of the research findings.
                - Its capacity to direct outcomes through Action (Act)
                - Potential resistances or external forces
                - The inherent uncertainties in complex system prediction
+               
+            **MANDATORY REALITY CHECKPOINT**:
+            
+            Complete ALL of these before stating any probability:
+            
+            1. **Current State Assessment**:
+               - What is measurably happening RIGHT NOW: ___
+               - NOT what should happen or what system wants
+               - Use specific numbers/facts from research
+            
+            2. **Momentum Calculation**:
+               - Direction: [Toward Yes/No/Option X]
+               - Strength: [Strong/Moderate/Weak]
+               - Formula: Days remaining / Days needed for reversal = ___
+               - If ratio < 1, reversal is unlikely
+            
+            3. **Energy Budget Check**:
+               - Energy required for change: ___
+               - Energy available: ___
+               - If available < required, max probability = (available/required) × 0.8
+            
+            4. **Evidence Weighting Statement**:
+               - "Empirical weight: __%, Theoretical weight: __%"
+               - If you can't justify these weights, recalculate
+            
+            5. **Proximity Override**:
+               - Distance to threshold: ___% 
+               - If < 10%, state: "Threshold dynamics dominating, normal analysis suspended"
+               
                
             The last thing you write is your final answer as:
             "
@@ -932,8 +1190,8 @@ if __name__ == "__main__":
     ], "Invalid run mode"
 
     template_bot = TemplateForecaster(
-        research_reports_per_question=2,
-        predictions_per_research_report=3,
+        research_reports_per_question=1,
+        predictions_per_research_report=1,
         use_research_summary_to_forecast=False,
         publish_reports_to_metaculus=True,
         folder_to_save_reports_to=None,
